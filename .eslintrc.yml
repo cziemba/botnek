@@ -1,0 +1,43 @@
+env:
+  browser: true
+  es2021: true
+extends:
+  - airbnb-base
+  - airbnb-typescript/base
+parser: '@typescript-eslint/parser'
+parserOptions:
+  ecmaVersion: latest
+  project: './tsconfig.json'
+plugins:
+  - '@typescript-eslint'
+  - 'unused-imports'
+  - 'import'
+rules:
+  indent:
+    - off
+  '@typescript-eslint/indent':
+    - error
+    - 4
+  max-len:
+    - error
+    - 150
+  max-classes-per-file:
+    - error
+    - 2
+  no-unused-vars:
+    - off
+  unused-imports/no-unused-imports:
+    - error
+  unused-imports/no-unused-vars:
+    - warn
+    - vars: 'all'
+      varsIgnorePattern: '^_'
+      args: 'after-used'
+      argsIgnorePattern: '^_'
+  sort-imports:
+    - error
+    - ignoreDeclarationSort: true
+  import/extensions:
+    - error
+    - always
+    - ignorePackages: true
