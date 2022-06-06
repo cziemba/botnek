@@ -1,7 +1,7 @@
-import { parseSfxAlias } from './sfx.js';
-import { SfxModifier } from '../data/types.js';
+import { SfxModifier } from '../../data/types.js';
+import { parseSfxAlias } from './common.js';
 
-describe('sfx', () => {
+describe('common sfx', () => {
     test('parseSfxAlias', () => {
         const result = parseSfxAlias('fart#turbo');
         expect(result.parsedAlias).toEqual('fart');

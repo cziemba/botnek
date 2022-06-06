@@ -1,10 +1,10 @@
 import {
-    BaseCommandInteraction, CommandInteraction,
+    CommandInteraction, Message,
 } from 'discord.js';
 import Track from './tracks/track.js';
 
 export interface AudioRequest {
-    interaction: BaseCommandInteraction & CommandInteraction, // TODO: ValidatedInteraction, an interaction with non-null user, channel and guild
+    interaction: CommandInteraction<'cached'> | Message<true>, // TODO: ValidatedInteraction, an interaction with non-null user, channel and guild
     track: Track,
 }
 

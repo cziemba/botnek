@@ -1,4 +1,4 @@
-import { Client, Intents } from 'discord.js';
+import { Client, Intents, Message } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import * as fs from 'fs';
@@ -64,17 +64,17 @@ export default class Botnek {
         });
 
         this.client.on('interactionCreate', async (interaction) => {
-            if (!interaction.isCommand() && !interaction.isContextMenu()) return;
+            if (!interaction.isCommand() || !interaction.inCachedGuild()) return;
 
             log.info(`${interaction.commandName} command received!`);
 
             const slashCommand = Commands.find((c) => c.data.name === interaction.commandName);
             if (!slashCommand) {
-                await interaction.followUp({ content: 'Oops, an error occurred!' });
+                await interaction.followUp({ content: 'Oops, an error occurred!', ephemeral: true });
                 return;
             }
 
-            await slashCommand.execute(
+            await slashCommand.executeCommand(
                 {
                     client: this.client,
                     config: this.config,
@@ -83,6 +83,39 @@ export default class Botnek {
                 },
                 interaction,
             );
+        });
+
+        this.client.on('messageCreate', async (message) => {
+            if (message.author.bot || !message.inGuild() || !(message instanceof Message<true>)) return;
+            if (!message.content.startsWith('!')) return; // TODO: Generify
+            if (!message.member?.voice.channel) {
+                await message.reply({
+                    content: 'You must join a voice channel before sending a command',
+                });
+                return;
+            }
+            const botShim = {
+                client: this.client,
+                config: this.config,
+                audioHandlers: this.audioHandlers,
+                databases: this.databases,
+            };
+            const cmdArgs = message.content.substring(1).split(' ');
+            log.info(`${cmdArgs[0]} command received!`);
+
+            const prefixCommand = Commands.find((c) => c.data.name === cmdArgs[0]);
+            if (!prefixCommand) {
+                log.info(`Ignoring unknown cmd ${cmdArgs[0]}`);
+                return;
+            }
+
+            try {
+                await prefixCommand.executeMessage(botShim, message, cmdArgs.slice(1));
+            } catch (e) {
+                await message.reply({
+                    content: `An error occurred ${e}`,
+                });
+            }
         });
     }
 
