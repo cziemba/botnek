@@ -4,6 +4,12 @@ import path from 'path';
 import * as crypto from 'crypto';
 import log from '../logging/logging.js';
 
+/**
+ * Process the input audio file using whatever filters specified (refer to ffmpeg docs).
+ * Writes the file into the guild's 'ffmpeg' storage dir, using deterministic digests for file names.
+ *
+ * Calling this function twice with the same parameters will only process the input once, allowing previously processed files to be re-used.
+ */
 const ffmpegProcessAudio = (inFile: string, guildDir: string, audioFilters: string): string => {
     if (!fs.existsSync(inFile)) throw new Error(`Bad file path, does not exist ${inFile}`);
     if (!fs.existsSync(guildDir)) fs.mkdirSync(path.resolve(guildDir));

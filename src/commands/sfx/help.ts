@@ -25,6 +25,7 @@ export default async function sfxHelp(client: BotShim, interaction: CommandInter
             'Chain sound effects: `sfx chain <alias1>, <alias2>, etc...`',
             'List available sounds: `sfx list`',
             'Add a sound effect: `sfx add <alias> <youtube-url>`',
+            'Remove a sound effect: `sfx del <alias>`',
         ].join('\n'),
     };
     await interaction.reply({
