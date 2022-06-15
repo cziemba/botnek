@@ -1,4 +1,5 @@
 import { AudioResource, createAudioResource } from '@discordjs/voice';
+import { createReadStream } from 'fs';
 import Track from './track.js';
 
 export default class LocalTrack extends Track {
@@ -10,6 +11,6 @@ export default class LocalTrack extends Track {
     }
 
     public async getAudioResource(): Promise<AudioResource<LocalTrack>> {
-        return createAudioResource(this.filePath, { metadata: this });
+        return createAudioResource(createReadStream(this.filePath), { metadata: this });
     }
 }
