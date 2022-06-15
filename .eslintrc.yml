@@ -9,9 +9,13 @@ parserOptions:
   ecmaVersion: latest
   project: './tsconfig.json'
 plugins:
+  - 'import'
   - '@typescript-eslint'
   - 'unused-imports'
-  - 'import'
+settings:
+  import/parsers:
+    '@typescript-eslint/parser':
+        - '.ts'
 rules:
   indent:
     - off
@@ -37,7 +41,3 @@ rules:
   sort-imports:
     - error
     - ignoreDeclarationSort: true
-  import/extensions:
-    - error
-    - always
-    - ignorePackages: true
