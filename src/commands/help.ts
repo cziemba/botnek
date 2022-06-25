@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
+import { InteractionReplyOptions, MessageOptions } from 'discord.js';
 import { Command } from '../types/command.js';
 import Play from './play.js';
 import Stop from './stop.js';
@@ -6,7 +7,10 @@ import Sfx from './sfx.js';
 import ServerEmoji from './serverEmoji.js';
 import Emote from './emote.js';
 
-const botHelp = async (client, interaction) => {
+/**
+ * For use in the bot news channel.
+ */
+export const helpMsgOptions = (): InteractionReplyOptions | MessageOptions => {
     const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote];
 
     const cmdToMd = (cmd: SlashCommandBuilder, helpText?: string) => ({
@@ -15,7 +19,7 @@ const botHelp = async (client, interaction) => {
     });
 
     const cmdFields = cmds.map((cmd) => cmdToMd(cmd.data, cmd.helpText));
-    await interaction.reply({
+    return {
         embeds: [{
             color: '#0F0F0F',
             title: 'Botnek Commands Overview',
@@ -23,10 +27,14 @@ const botHelp = async (client, interaction) => {
             fields: cmdFields,
         }],
         ephemeral: true,
-    });
+    };
 };
 
-const Help: Command = {
+const botHelp = async (client, interaction) => {
+    await interaction.reply(helpMsgOptions());
+};
+
+export const Help: Command = {
     data: new SlashCommandBuilder()
         .setName('help')
         .setDescription('Get help with commands'),
@@ -37,5 +45,3 @@ const Help: Command = {
         await botHelp(client, message);
     },
 };
-
-export default Help;

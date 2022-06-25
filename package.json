@@ -8,11 +8,12 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "clean": "tsc --build --clean",
+    "clean": "rimraf dist",
     "start": "npm run build && node --experimental-json-modules --enable-source-maps dist/index.js | npx pino-pretty -t",
     "lint": "eslint . --ext .ts",
     "lint-fix": "npm run lint -- --fix",
-    "test": "jest test/**/*.test.ts"
+    "test": "jest test/**/*.test.ts",
+    "redeploy": "npm run clean && npm run build && pm2 restart botnek2"
   },
   "dependencies": {
     "@discordjs/builders": "^0.14.0",

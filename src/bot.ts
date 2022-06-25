@@ -1,4 +1,6 @@
-import { Client, Intents, Message } from 'discord.js';
+import {
+    Client, Guild, Intents, Message, MessageEditOptions, MessageOptions,
+} from 'discord.js';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import * as fs from 'fs';
@@ -14,6 +16,7 @@ import { isEmoteAlias } from './data/types/emote.js';
 import EmoteConfigManager from './data/emoteConfigManager.js';
 import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.js';
 import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway.js';
+import { helpMsgOptions } from './commands/help.js';
 
 const DB_FILE: string = 'db.json';
 
@@ -54,10 +57,12 @@ export default class Botnek {
             const rest = new REST({ version: '10' }).setToken(config.token);
 
             // Init for each guild
-            await Promise.all(guilds.map((g) => {
-                log.info(`${this.client.user?.username} is running [clientId=${clientId}, guildId=${g.id}]`);
+            await Promise.all(guilds.map(async (g) => {
+                log.info(`${this.client.user?.username} is running [clientId=${clientId}, guildId=${g.id}] in ${g.name}`);
 
                 this.initGuildResources(g.id, config.dataRoot);
+
+                await this.initHelpChannel(g);
 
                 return rest.put(
                     Routes.applicationGuildCommands(clientId, g.id),
@@ -156,6 +161,48 @@ export default class Botnek {
             message,
             emote,
         );
+    }
+
+    private async initHelpChannel(guild: Guild): Promise<void> {
+        const botnekHelpName = 'botnek2-help';
+        let botnekHelpChannel = guild.channels.cache.find((c) => c.name === botnekHelpName);
+        if (!botnekHelpChannel) {
+            log.info('Creating the help channel');
+            botnekHelpChannel = await guild.channels.create(
+                botnekHelpName,
+                {
+                    type: 'GUILD_TEXT',
+                    topic: 'How to use botnek!',
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            deny: [
+                                'CREATE_PUBLIC_THREADS',
+                                'SEND_TTS_MESSAGES',
+                                'CREATE_PRIVATE_THREADS',
+                                'SEND_MESSAGES_IN_THREADS',
+                                'SEND_MESSAGES',
+                                'ADD_REACTIONS',
+                                'USE_APPLICATION_COMMANDS',
+                            ],
+                        },
+                    ],
+                },
+            );
+        }
+
+        if (!botnekHelpChannel.isText()) {
+            throw new Error('Help channel exists but is corrupted.');
+        }
+        const botMsg = [...(await botnekHelpChannel.messages.fetch()).values()]
+            .find((m) => m.author.id === this.client.user?.id);
+        if (!botMsg) {
+            log.info('Initializing the help text');
+            await botnekHelpChannel.send(helpMsgOptions() as MessageOptions);
+            return;
+        }
+        log.info('Updating the help text');
+        await botMsg.edit(helpMsgOptions() as MessageEditOptions);
     }
 
     private initGuildResources(guildId: string, dataRoot: string) {
