@@ -9,6 +9,11 @@ import GuildResource from './types/guildResource.js';
 import log from './logging/logging.js';
 import GuildDatabase from './data/db.js';
 import { BotnekConfig } from './types/config.js';
+import handleSingleEmote from './commands/emotes/emote.js';
+import { isEmoteAlias } from './data/types/emote.js';
+import EmoteConfigManager from './data/emoteConfigManager.js';
+import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.js';
+import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway.js';
 
 const DB_FILE: string = 'db.json';
 
@@ -80,14 +85,21 @@ export default class Botnek {
                     config: this.config,
                     audioHandlers: this.audioHandlers,
                     databases: this.databases,
+                    emoteGateways: {
+                        sevenTvGateway: new SevenTVEmoteGateway(this.config),
+                        bttvGateway: new BetterTTVEmoteGateway(this.config),
+                    },
                 },
                 interaction,
             );
         });
 
-        this.client.on('messageCreate', async (message) => {
+        this.client.on('messageCreate', async (message: Message<boolean>) => {
             if (message.author.bot || !message.inGuild() || !(message instanceof Message<true>)) return;
-            if (!message.content.startsWith('!')) return; // TODO: Generify
+            if (!message.content.startsWith('!')) {
+                await this.tryHandleEmote(message);
+                return;
+            }
             if (!message.member?.voice.channel) {
                 await message.reply({
                     content: 'You must join a voice channel before sending a command',
@@ -99,6 +111,10 @@ export default class Botnek {
                 config: this.config,
                 audioHandlers: this.audioHandlers,
                 databases: this.databases,
+                emoteGateways: {
+                    sevenTvGateway: new SevenTVEmoteGateway(this.config),
+                    bttvGateway: new BetterTTVEmoteGateway(this.config),
+                },
             };
             const cmdArgs = message.content.substring(1).split(' ');
             log.info(`${cmdArgs[0]} command received!`);
@@ -117,6 +133,29 @@ export default class Botnek {
                 });
             }
         });
+    }
+
+    private async tryHandleEmote(message: Message<true>): Promise<void> {
+        // TODO: handle multiple emotes in one message https://imagemagick.org/Usage/anim_mods/#merging
+        const msg = message.content.trim();
+        if (!isEmoteAlias(msg)) return;
+        const emoteConfigManager = new EmoteConfigManager(this.databases.get(message.guildId).db);
+        if (!emoteConfigManager.aliasExists(msg)) return;
+        const emote = emoteConfigManager.get(msg);
+        await handleSingleEmote(
+            {
+                client: this.client,
+                config: this.config,
+                audioHandlers: this.audioHandlers,
+                databases: this.databases,
+                emoteGateways: {
+                    sevenTvGateway: new SevenTVEmoteGateway(this.config),
+                    bttvGateway: new BetterTTVEmoteGateway(this.config),
+                },
+            },
+            message,
+            emote,
+        );
     }
 
     private initGuildResources(guildId: string, dataRoot: string) {

@@ -41,3 +41,4 @@ rules:
   sort-imports:
     - error
     - ignoreDeclarationSort: true
+  newline-per-chained-call: off

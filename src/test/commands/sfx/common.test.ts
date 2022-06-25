@@ -1,5 +1,5 @@
-import { SfxModifier } from '../../data/types.js';
-import { parseSfxAlias } from './common.js';
+import { SfxModifier } from '../../../data/types.js';
+import { parseSfxAlias } from '../../../commands/sfx/common.js';
 
 describe('common sfx', () => {
     test('parseSfxAlias', () => {
