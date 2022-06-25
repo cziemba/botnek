@@ -3,9 +3,11 @@ import { Command } from '../types/command.js';
 import Play from './play.js';
 import Stop from './stop.js';
 import Sfx from './sfx.js';
+import ServerEmoji from './serverEmoji.js';
+import Emote from './emote.js';
 
 const botHelp = async (client, interaction) => {
-    const cmds: Command[] = [Play, Sfx, Stop];
+    const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote];
 
     const cmdToMd = (cmd: SlashCommandBuilder, helpText?: string) => ({
         name: `${cmd.description}`,

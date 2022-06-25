@@ -143,8 +143,12 @@ const Emote: Command = {
             .addStringOption((alias) => alias.setName('alias')
                 .setDescription('The alias for the emote (optional, will use default name otherwise)'))),
     helpText: `
+        Interact with webhook based emotes. When an alias is recognized botnek replaces the message with the appropriate emote.
+        Not the same as discord's server-based emojis but have no size limitation.
         Usage:
-            \`emote\`
+            \`emote add <7tv.app or betterttv.com url> [alias: optional]\` - Adds an emote
+            \`emote list\` - To see available emotes
+            \`emote\` - To enable emotes in the current channel
     `,
     executeCommand: async (client, interaction) => {
         if (!interaction.inCachedGuild() || !interaction.isCommand()) {
