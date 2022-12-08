@@ -5,6 +5,7 @@ import Sfx from './commands/sfx.js';
 import { Help } from './commands/help.js';
 import Emote from './commands/emote.js';
 import ServerEmoji from './commands/serverEmoji.js';
+import ChatGPT from './commands/chatgpt.js';
 
 const Commands: Command[] = [
     Sfx,
@@ -13,6 +14,7 @@ const Commands: Command[] = [
     Help,
     Emote,
     ServerEmoji,
+    ChatGPT,
 ];
 
 export default Commands;

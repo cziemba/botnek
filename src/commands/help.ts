@@ -6,12 +6,13 @@ import Stop from './stop.js';
 import Sfx from './sfx.js';
 import ServerEmoji from './serverEmoji.js';
 import Emote from './emote.js';
+import ChatGPT from './chatgpt.js';
 
 /**
  * For use in the bot news channel.
  */
 export const helpMsgOptions = (): InteractionReplyOptions | MessageOptions => {
-    const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote];
+    const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote, ChatGPT];
 
     const cmdToMd = (cmd: SlashCommandBuilder, helpText?: string) => ({
         name: `${cmd.description}`,
