@@ -6,7 +6,7 @@ import ffmpegAdjustRate from '../../utils/ffmpeg.js';
 
 export function sfxAliasToString(sfxAlias: string, sfxModifiers: SfxModifier[]): string {
     const modifiersString = sfxModifiers.length === 0 ? ''
-        : `[${sfxModifiers.join(',')}]`;
+        : `#${sfxModifiers.join('#')}`;
     return `\`${sfxAlias}${modifiersString}\``;
 }
 

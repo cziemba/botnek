@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@discordjs/builders": "^0.14.0",
-    "@discordjs/opus": "^0.7.0",
+    "@discordjs/opus": "^0.8.0",
     "@discordjs/rest": "^0.5.0",
     "@discordjs/voice": "^0.10.0",
     "bufferutil": "^4.0.6",
@@ -37,7 +37,7 @@
     "sodium": "^3.0.2",
     "sodium-native": "^3.3.0",
     "tweetnacl": "^1.0.3",
-    "ytdl-core": "^4.11.0",
+    "ytdl-core": "4.10.0",
     "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
