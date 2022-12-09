@@ -16,13 +16,13 @@ function webhookDb(db: LowWithLodash<GuildData>) {
 }
 
 export async function tryRegisterEmoteHook(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>): Promise<void> {
-    if (interaction.channel === null || !interaction.channel.isText()) return;
+    if (interaction.channel === null || !interaction.channel.isTextBased()) return;
     const db = client.databases.get(interaction.guildId)?.db!;
     const { channel, channelId } = interaction;
 
     const existingWebhook = webhookDb(db).get(channelId).find({ hookName: EMOTE_HOOK_NAME }).value();
     if (existingWebhook) {
-        interaction.reply({
+        await interaction.reply({
             content: 'Emote are already enabled!',
         });
         return;
@@ -36,7 +36,7 @@ export async function tryRegisterEmoteHook(client: BotShim, interaction: Command
         db.data!.webhooks[channelId] = [];
     }
 
-    const webhook: Webhook = await (channel as TextChannel).createWebhook(EMOTE_HOOK_NAME);
+    const webhook: Webhook = await (channel as TextChannel).createWebhook({ name: EMOTE_HOOK_NAME });
     log.info(`Created hook ${EMOTE_HOOK_NAME} -> ${webhook.id} w/ token ${webhook.token}`);
     db.data!.webhooks[channelId].push({
         id: webhook.id,
@@ -45,7 +45,7 @@ export async function tryRegisterEmoteHook(client: BotShim, interaction: Command
     });
     db.write();
 
-    webhook.send({
+    await webhook.send({
         content: `Registered ${EMOTE_HOOK_NAME} in ${channel.name}`,
         username: `Botnek (replying to ${interaction.member?.displayName})`,
     });
@@ -69,13 +69,13 @@ async function emoteList(client: BotShim, interaction: CommandInteraction<'cache
         }
         return `\`${alias}\`: <${url}>`;
     }).join('\n');
-    interaction.reply({
+    await interaction.reply({
         content: emoteText || 'No emotes!',
     });
 }
 
 async function tryRemoveEmoteHook(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>): Promise<void> {
-    interaction.reply({
+    await interaction.reply({
         content: '`TODO: not implemented yet`',
     });
 }
@@ -88,11 +88,11 @@ async function addEmote(
     const emoteConfigManager = new EmoteConfigManager(client.databases.get(interaction.guildId).db);
     if (props.alias) {
         if (!isEmoteAlias(props.alias)) {
-            interaction.reply(`Invalid characters in alias: \`${props.alias}\``);
+            await interaction.reply(`Invalid characters in alias: \`${props.alias}\``);
             return;
         }
         if (emoteConfigManager.aliasExists(props.alias)) {
-            interaction.reply(`Emote \`${props.alias}\` already exists`);
+            await interaction.reply(`Emote \`${props.alias}\` already exists`);
             return;
         }
     }

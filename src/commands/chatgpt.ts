@@ -4,7 +4,7 @@ import { ChatGPTAPI, ChatGPTConversation } from 'chatgpt';
 import { BotShim, Command } from '../types/command.js';
 import log from '../logging/logging.js';
 
-const ONE_MINUTE_MS = 1 * 60 * 1000;
+const ONE_MINUTE_MS = 60 * 1000;
 
 let chatGptApi: ChatGPTAPI;
 let currentToken: string;
@@ -47,6 +47,7 @@ async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'
         await interaction.reply({
             content: `Something went wrong: ${JSON.stringify(e)}`,
         });
+        conversation.expiry = Date.now();
     }
 }
 

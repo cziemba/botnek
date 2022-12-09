@@ -6,4 +6,4 @@ import log from './logging/logging.js';
 const botnek = new Botnek(Config.default);
 
 log.info(generateDependencyReport());
-botnek.login(Config.default.token);
+await botnek.login(Config.default.token);

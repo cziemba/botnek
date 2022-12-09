@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { InteractionReplyOptions, MessageOptions } from 'discord.js';
+import { InteractionReplyOptions, MessageCreateOptions } from 'discord.js';
 import { Command } from '../types/command.js';
 import Play from './play.js';
 import Stop from './stop.js';
@@ -9,9 +9,9 @@ import Emote from './emote.js';
 import ChatGPT from './chatgpt.js';
 
 /**
- * For use in the bot news channel.
+ * Exported for use in the bot news channel.
  */
-export const helpMsgOptions = (): InteractionReplyOptions | MessageOptions => {
+export const helpMsgOptions = (): InteractionReplyOptions | MessageCreateOptions => {
     const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote, ChatGPT];
 
     const cmdToMd = (cmd: SlashCommandBuilder, helpText?: string) => ({
@@ -22,9 +22,9 @@ export const helpMsgOptions = (): InteractionReplyOptions | MessageOptions => {
     const cmdFields = cmds.map((cmd) => cmdToMd(cmd.data, cmd.helpText));
     return {
         embeds: [{
-            color: '#0F0F0F',
+            color: 0x0F0F0F,
             title: 'Botnek Commands Overview',
-            timestamp: Date.now(),
+            timestamp: new Date().toISOString(),
             fields: cmdFields,
         }],
         ephemeral: true,

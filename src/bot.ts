@@ -1,5 +1,13 @@
 import {
-    Client, Guild, Intents, Message, MessageEditOptions, MessageOptions,
+    ChannelType,
+    ChatInputCommandInteraction,
+    Client,
+    GatewayIntentBits,
+    Guild,
+    Message,
+    MessageCreateOptions,
+    MessageEditOptions,
+    PermissionFlagsBits,
 } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
@@ -36,9 +44,9 @@ export default class Botnek {
 
         this.client = new Client({
             intents: [
-                Intents.FLAGS.GUILD_VOICE_STATES,
-                Intents.FLAGS.GUILDS,
-                Intents.FLAGS.GUILD_MESSAGES,
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildVoiceStates,
+                GatewayIntentBits.GuildMessages,
             ],
         });
 
@@ -79,7 +87,7 @@ export default class Botnek {
             log.info(`${interaction.commandName} command received!`);
 
             const slashCommand = Commands.find((c) => c.data.name === interaction.commandName);
-            if (!slashCommand) {
+            if (!slashCommand || !(interaction instanceof ChatInputCommandInteraction)) {
                 await interaction.followUp({ content: 'Oops, an error occurred!', ephemeral: true });
                 return;
             }
@@ -99,8 +107,8 @@ export default class Botnek {
             );
         });
 
-        this.client.on('messageCreate', async (message: Message<boolean>) => {
-            if (message.author.bot || !message.inGuild() || !(message instanceof Message<true>)) return;
+        this.client.on('messageCreate', async (message: Message) => {
+            if (message.author.bot || !message.inGuild()) return;
             if (!message.content.startsWith('!')) {
                 await this.tryHandleEmote(message);
                 return;
@@ -169,21 +177,22 @@ export default class Botnek {
         if (!botnekHelpChannel) {
             log.info('Creating the help channel');
             botnekHelpChannel = await guild.channels.create(
-                botnekHelpName,
                 {
-                    type: 'GUILD_TEXT',
+                    name: botnekHelpName,
+                    type: ChannelType.GuildAnnouncement,
                     topic: 'How to use botnek!',
                     permissionOverwrites: [
                         {
                             id: guild.id,
                             deny: [
-                                'CREATE_PUBLIC_THREADS',
-                                'SEND_TTS_MESSAGES',
-                                'CREATE_PRIVATE_THREADS',
-                                'SEND_MESSAGES_IN_THREADS',
-                                'SEND_MESSAGES',
-                                'ADD_REACTIONS',
-                                'USE_APPLICATION_COMMANDS',
+                                PermissionFlagsBits.CreatePublicThreads,
+                                PermissionFlagsBits.CreatePublicThreads,
+                                PermissionFlagsBits.CreatePrivateThreads,
+                                PermissionFlagsBits.SendTTSMessages,
+                                PermissionFlagsBits.SendMessagesInThreads,
+                                PermissionFlagsBits.SendMessages,
+                                PermissionFlagsBits.AddReactions,
+                                PermissionFlagsBits.UseApplicationCommands,
                             ],
                         },
                     ],
@@ -191,14 +200,14 @@ export default class Botnek {
             );
         }
 
-        if (!botnekHelpChannel.isText()) {
-            throw new Error('Help channel exists but is corrupted.');
+        if (!botnekHelpChannel.isTextBased()) {
+            throw new Error(`Help channel ${botnekHelpName} exists but is corrupted. Please delete it and try again.`);
         }
         const botMsg = [...(await botnekHelpChannel.messages.fetch()).values()]
             .find((m) => m.author.id === this.client.user?.id);
         if (!botMsg) {
             log.info('Initializing the help text');
-            await botnekHelpChannel.send(helpMsgOptions() as MessageOptions);
+            await botnekHelpChannel.send(helpMsgOptions() as MessageCreateOptions);
             return;
         }
         log.info('Updating the help text');

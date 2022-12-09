@@ -1,7 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import {
-    CommandInteraction, Message,
-} from 'discord.js';
+import { CommandInteraction, Message } from 'discord.js';
 import path from 'path';
 import os from 'os';
 import { BotShim, Command } from '../types/command.js';
@@ -36,14 +34,14 @@ async function addEmoji(
 
     const emoteFilePath = path.join(emotePath, `${emote.id}.gif`);
     try {
-        await emojiManager.create(emoteFilePath, alias);
+        await emojiManager.create({ attachment: emoteFilePath, name: alias });
     } catch (e1) {
         const tmpFile = path.resolve(os.tmpdir(), `${emote.id}-shrunk.gif`);
         const delay = await extractFrameDelay(emoteFilePath);
         await convertToGif(emoteFilePath, tmpFile, delay, '64x64^');
         // Try one more time!
         try {
-            await emojiManager.create(tmpFile, alias);
+            await emojiManager.create({ attachment: tmpFile, name: alias });
         } catch (e2) {
             await interaction.reply({
                 content: `Failed to upload after two attempts at optimizing. Emoji <${props.url}> is probably too large.`,

@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, Message } from 'discord.js';
+import { ChatInputCommandInteraction, Client, Message } from 'discord.js';
 import GuildResource from './guildResource.js';
 import AudioHandler from '../audio/audioHandler.js';
 import GuildDatabase from '../data/db.js';
@@ -20,6 +20,6 @@ export interface BotShim {
 export interface Command {
     data: any;
     helpText?: string;
-    executeCommand: (bot: BotShim, interaction: CommandInteraction<'cached'>) => void;
-    executeMessage: (bot: BotShim, message: Message<true>, args: string[]) => void;
+    executeCommand: (bot: BotShim, interaction: ChatInputCommandInteraction<'cached'>) => Promise<void>;
+    executeMessage: (bot: BotShim, message: Message<true>, args: string[]) => Promise<void>;
 }

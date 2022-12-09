@@ -14,7 +14,7 @@ export default abstract class EmoteGateway {
 
     /**
      * Fetch the emote and save to disk (if not present), returning the emote path.
-     * @param emote the Emote to save.
+     * @param id the Emote to save.
      */
     public abstract fetchEmote(id: string): Promise<Emote>;
 

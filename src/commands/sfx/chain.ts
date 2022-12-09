@@ -58,7 +58,7 @@ export async function sfxChain(client: BotShim, interaction: CommandInteraction<
         enqueuePromises.push(audio.enqueue({ interaction, track: handleModifiers(sfxPath, alias, mods, guildDir) }));
     }
     await Promise.all(enqueuePromises);
-    interaction.reply({
+    await interaction.reply({
         content: `Queued chain of ${sfxs.map((s) => sfxAliasToString(s.parsedAlias, s.modifiers)).join(' -> ')}`,
     });
 }
