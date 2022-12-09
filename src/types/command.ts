@@ -22,4 +22,5 @@ export interface Command {
     helpText?: string;
     executeCommand: (bot: BotShim, interaction: ChatInputCommandInteraction<'cached'>) => Promise<void>;
     executeMessage: (bot: BotShim, message: Message<true>, args: string[]) => Promise<void>;
+    requireUserInChannel?: boolean;
 }

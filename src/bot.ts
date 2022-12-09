@@ -114,12 +114,22 @@ export default class Botnek {
                 await this.tryHandleEmote(message);
                 return;
             }
-            if (!message.member?.voice.channel) {
+            const cmdArgs = message.content.substring(1).split(' ');
+            log.info(`${cmdArgs[0]} command received!`);
+
+            const prefixCommand = Commands.find((c) => c.data.name === cmdArgs[0]);
+            if (!prefixCommand) {
+                log.info(`Ignoring unknown cmd ${cmdArgs[0]}`);
+                return;
+            }
+
+            if (prefixCommand.requireUserInChannel && !message.member?.voice.channel) {
                 await message.reply({
                     content: 'You must join a voice channel before sending a command',
                 });
                 return;
             }
+
             const botShim = {
                 client: this.client,
                 config: this.config,
@@ -130,14 +140,6 @@ export default class Botnek {
                     bttvGateway: new BetterTTVEmoteGateway(this.config),
                 },
             };
-            const cmdArgs = message.content.substring(1).split(' ');
-            log.info(`${cmdArgs[0]} command received!`);
-
-            const prefixCommand = Commands.find((c) => c.data.name === cmdArgs[0]);
-            if (!prefixCommand) {
-                log.info(`Ignoring unknown cmd ${cmdArgs[0]}`);
-                return;
-            }
 
             try {
                 await prefixCommand.executeMessage(botShim, message, cmdArgs.slice(1));

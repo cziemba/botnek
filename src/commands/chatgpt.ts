@@ -52,6 +52,7 @@ async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'
 }
 
 const ChatGPT: Command = {
+    requireUserInChannel: false,
     data: new SlashCommandBuilder()
         .setName('gpt')
         .setDescription('Talk with ChatGPT')
@@ -66,9 +67,6 @@ const ChatGPT: Command = {
             \`gpt hello there\`
     `,
     executeCommand: async (client, interaction) => {
-        if (!interaction.inCachedGuild() || !interaction.isCommand()) {
-            return;
-        }
         await chatGpt(client, interaction, interaction.options.getString('text', true));
     },
     executeMessage: async (client, message, args) => {
