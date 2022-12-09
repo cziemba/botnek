@@ -47,6 +47,7 @@ export default class Botnek {
                 GatewayIntentBits.Guilds,
                 GatewayIntentBits.GuildVoiceStates,
                 GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.MessageContent,
             ],
         });
 
