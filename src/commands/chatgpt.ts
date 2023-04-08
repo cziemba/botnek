@@ -16,6 +16,7 @@ async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'
     if (!chatGptApi) {
         [currentToken] = client.config.chatGptTokens || [''];
         chatGptApi = new ChatGPTAPI({
+            clearanceToken: 'TODO',
             sessionToken: currentToken,
             markdown: true,
         });

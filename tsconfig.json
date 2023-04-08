@@ -1,16 +1,21 @@
 {
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    "module": "NodeNext",
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "noImplicitAny": false,
     "noEmitOnError": true,
     "removeComments": false,
     "inlineSourceMap": true,
-    "target": "es2021",
+    "target": "ESNext",
     "outDir": "dist",
     "typeRoots": [
       "node_modules/@types"
+    ],
+    "types": [
+      "bun-types"
     ]
   },
   "include": [
