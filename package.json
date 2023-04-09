@@ -2,18 +2,17 @@
   "name": "botnek2",
   "version": "1.0.0",
   "type": "module",
-  "exports": "dist/index.js",
   "engines": {
-    "node": ">=14.16"
+    "node": ">=18.00"
   },
   "scripts": {
     "build": "tsc --build",
     "clean": "rimraf dist",
-    "start": "npm run build && node --experimental-json-modules --enable-source-maps dist/index.js | npx pino-pretty -t",
+    "start": "node --loader ts-node/esm --experimental-specifier-resolution=node --experimental-json-modules --enable-source-maps src/index.ts | npx pino-pretty -t",
     "lint": "eslint . --ext .ts",
     "lint-fix": "npm run lint -- --fix",
     "test": "jest test/**/*.test.ts",
-    "redeploy": "npm run clean && npm run build && pm2 restart botnek2"
+    "redeploy": "pm2 restart botnek2"
   },
   "dependencies": {
     "@discordjs/builders": "^1.4.0",
@@ -21,7 +20,7 @@
     "@discordjs/rest": "^1.4.0",
     "@discordjs/voice": "^0.14.0",
     "bufferutil": "^4.0.7",
-    "chatgpt": "^2.0.3",
+    "chatgpt": "^5.2.2",
     "discord-api-types": "^0.37.21",
     "discord.js": "^14.7.1",
     "erlpack": "github:discord/erlpack",
@@ -32,7 +31,7 @@
     "lodash": "^4.17.21",
     "lowdb": "^3.0.0",
     "mime-types": "^2.1.35",
-    "node-fetch": "^3.3.0",
+    "node-fetch": "^3.3.1",
     "opusscript": "^0.0.8",
     "pino": "^7.11.0",
     "sodium": "^3.0.2",
@@ -45,6 +44,7 @@
     "@tsconfig/recommended": "^1.0.1",
     "@types/jest": "^28.1.8",
     "@types/lowdb": "^1.0.11",
+    "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.45.1",
     "@typescript-eslint/parser": "^5.45.1",
     "eslint": "^8.29.0",

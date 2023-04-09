@@ -1,30 +1,29 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
-import { ChatGPTAPI, ChatGPTConversation } from 'chatgpt';
+import { ChatGPTAPI } from 'chatgpt';
 import { BotShim, Command } from '../types/command.js';
 import log from '../logging/logging.js';
 
 const ONE_MINUTE_MS = 60 * 1000;
+const FIVE_MINUTES_MS = 5 * ONE_MINUTE_MS;
 
-let chatGptApi: ChatGPTAPI;
+let api: ChatGPTAPI;
 let currentToken: string;
 let conversation: {
-    api: ChatGPTConversation,
+    id?: string,
     expiry: number,
 };
 async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, msg: string): Promise<void> {
-    if (!chatGptApi) {
-        [currentToken] = client.config.chatGptTokens || [''];
-        chatGptApi = new ChatGPTAPI({
-            sessionToken: currentToken,
-            markdown: true,
+    if (!api) {
+        currentToken = (client.config.chatGptTokens && client.config.chatGptTokens[0]) || '';
+        api = new ChatGPTAPI({
+            apiKey: currentToken,
         });
-        log.debug(await chatGptApi.ensureAuth());
     }
 
+    // Initialize conversation
     if (!conversation || conversation.expiry <= Date.now()) {
         conversation = {
-            api: chatGptApi.getConversation(),
             expiry: Date.now() + (5 * 60 * 1000),
         };
     }
@@ -34,15 +33,20 @@ async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'
     }
 
     try {
-        const response = await conversation.api.sendMessage(msg, {
+        if (conversation.id) {
+            log.info(`Continuation of conversation: ${conversation.id}`);
+        }
+        const response = await api.sendMessage(msg, {
             timeoutMs: ONE_MINUTE_MS,
+            ...(conversation.id && { parentMessageId: conversation.id }),
         });
 
         await interaction.reply({
-            content: `ChatGPT says: ${response}`,
+            content: `ChatGPT says: ${response.text}`,
         });
 
-        conversation.expiry = Date.now() + (5 * 60 * 1000);
+        conversation.expiry = Date.now() + (FIVE_MINUTES_MS);
+        conversation.id = response.id;
     } catch (e) {
         await interaction.reply({
             content: `Something went wrong: ${JSON.stringify(e)}`,
