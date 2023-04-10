@@ -7,7 +7,7 @@ extends:
 parser: '@typescript-eslint/parser'
 parserOptions:
   ecmaVersion: latest
-  project: ['./tsconfig.json', './tsconfig.test.json']
+  project: ['./tsconfig.json']
 plugins:
   - 'import'
   - '@typescript-eslint'
