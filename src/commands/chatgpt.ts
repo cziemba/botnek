@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import { ChatGPTAPI } from 'chatgpt';
-import { BotShim, Command } from '../types/command.js';
-import log from '../logging/logging.js';
+import { BotShim, Command } from '../types/command.ts';
+import log from '../logging/logging.ts';
 
 const ONE_MINUTE_MS = 60 * 1000;
 const FIVE_MINUTES_MS = 5 * ONE_MINUTE_MS;

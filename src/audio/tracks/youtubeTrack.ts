@@ -2,7 +2,7 @@ import ytdl, { MoreVideoDetails } from 'ytdl-core';
 import { AudioResource, createAudioResource } from '@discordjs/voice';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
-import Track from './track.js';
+import Track from './track.ts';
 
 export default class YoutubeTrack extends Track {
     public url: string;

@@ -1,11 +1,11 @@
-import { Command } from './types/command.js';
-import Play from './commands/play.js';
-import Stop from './commands/stop.js';
-import Sfx from './commands/sfx.js';
-import { Help } from './commands/help.js';
-import Emote from './commands/emote.js';
-import ServerEmoji from './commands/serverEmoji.js';
-import ChatGPT from './commands/chatgpt.js';
+import { Command } from './types/command.ts';
+import Play from './commands/play.ts';
+import Stop from './commands/stop.ts';
+import Sfx from './commands/sfx.ts';
+import { Help } from './commands/help.ts';
+import Emote from './commands/emote.ts';
+import ServerEmoji from './commands/serverEmoji.ts';
+import ChatGPT from './commands/chatgpt.ts';
 
 const Commands: Command[] = [
     Sfx,

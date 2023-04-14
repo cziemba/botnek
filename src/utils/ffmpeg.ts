@@ -2,7 +2,7 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import * as crypto from 'crypto';
-import log from '../logging/logging.js';
+import log from '../logging/logging.ts';
 
 /**
  * Process the input audio file using whatever filters specified (refer to ffmpeg docs).

@@ -2,9 +2,9 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import path from 'path';
 import os from 'os';
-import { BotShim, Command } from '../types/command.js';
-import EmoteGateway from './emotes/emoteGateway.js';
-import { convertToGif, extractFrameDelay } from '../utils/imagemagick.js';
+import { BotShim, Command } from '../types/command.ts';
+import EmoteGateway from './emotes/emoteGateway.ts';
+import { convertToGif, extractFrameDelay } from '../utils/imagemagick.ts';
 
 async function addEmoji(
     client: BotShim,

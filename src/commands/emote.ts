@@ -2,12 +2,12 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import {
     CommandInteraction, Message, TextChannel, Webhook,
 } from 'discord.js';
-import { BotShim, Command } from '../types/command.js';
-import log from '../logging/logging.js';
-import { GuildData } from '../data/types.js';
-import { LowWithLodash } from '../data/db.js';
-import EmoteConfigManager from '../data/emoteConfigManager.js';
-import { EmoteSource, isEmoteAlias } from '../data/types/emote.js';
+import { BotShim, Command } from '../types/command.ts';
+import log from '../logging/logging.ts';
+import { GuildData } from '../data/types.ts';
+import { LowWithLodash } from '../data/db.ts';
+import EmoteConfigManager from '../data/emoteConfigManager.ts';
+import { EmoteSource, isEmoteAlias } from '../data/types/emote.ts';
 
 export const EMOTE_HOOK_NAME: string = 'emojiHook';
 

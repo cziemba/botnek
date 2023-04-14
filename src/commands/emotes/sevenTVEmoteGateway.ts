@@ -4,11 +4,11 @@ import fetch from 'node-fetch';
 import mime from 'mime-types';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
-import EmoteGateway from './emoteGateway.js';
-import { Emote, EmoteSource } from '../../data/types/emote.js';
-import { BotnekConfig } from '../../types/config.js';
-import log from '../../logging/logging.js';
-import { convertToGif, extractFrameDelay } from '../../utils/imagemagick.js';
+import EmoteGateway from './emoteGateway.ts';
+import { Emote, EmoteSource } from '../../data/types/emote.ts';
+import { BotnekConfig } from '../../types/config.ts';
+import log from '../../logging/logging.ts';
+import { convertToGif, extractFrameDelay } from '../../utils/imagemagick.ts';
 
 const API_BASE = 'https://api.7tv.app/v2';
 const URL_ID_MATCHER = /http.*(7tv.app)\/emote(s)?\/(?<id>\w+).*$/;

@@ -1,6 +1,6 @@
 import { AudioResource, createAudioResource } from '@discordjs/voice';
 import { createReadStream } from 'fs';
-import Track from './track.js';
+import Track from './track.ts';
 
 export default class LocalTrack extends Track {
     public filePath: string;

@@ -1,7 +1,7 @@
 import { generateDependencyReport } from '@discordjs/voice';
 import * as Config from './config.json' assert {type: 'json'};
-import Botnek from './bot.js';
-import log from './logging/logging.js';
+import Botnek from './bot.ts';
+import log from './logging/logging.ts';
 
 const botnek = new Botnek(Config.default);
 

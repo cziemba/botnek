@@ -3,11 +3,11 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
-import EmoteGateway from './emoteGateway.js';
-import { Emote, EmoteSource } from '../../data/types/emote.js';
-import { BotnekConfig } from '../../types/config.js';
-import log from '../../logging/logging.js';
-import { convertToGif, extractFrameDelay } from '../../utils/imagemagick.js';
+import EmoteGateway from './emoteGateway.ts';
+import { Emote, EmoteSource } from '../../data/types/emote.ts';
+import { BotnekConfig } from '../../types/config.ts';
+import log from '../../logging/logging.ts';
+import { convertToGif, extractFrameDelay } from '../../utils/imagemagick.ts';
 
 const API_BASE = 'https://api.betterttv.net/3';
 const CDN_BASE = 'https://cdn.betterttv.net';

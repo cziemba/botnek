@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim, Command } from '../types/command.js';
-import YoutubeTrack from '../audio/tracks/youtubeTrack.js';
-import log from '../logging/logging.js';
+import { BotShim, Command } from '../types/command.ts';
+import YoutubeTrack from '../audio/tracks/youtubeTrack.ts';
+import log from '../logging/logging.ts';
 
 export interface PlayClipParams {
     url?: string;

@@ -1,5 +1,5 @@
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.js';
+import { BotShim } from '../../types/command.ts';
 
 export default async function sfxList(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>) {
     const db = client.databases.get(interaction.guildId)?.db!;

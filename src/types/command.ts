@@ -1,10 +1,10 @@
 import { ChatInputCommandInteraction, Client, Message } from 'discord.js';
-import GuildResource from './guildResource.js';
-import AudioHandler from '../audio/audioHandler.js';
-import GuildDatabase from '../data/db.js';
-import { BotnekConfig } from './config.js';
-import BetterTTVEmoteGateway from '../commands/emotes/betterTTVEmoteGateway.js';
-import SevenTVEmoteGateway from '../commands/emotes/sevenTVEmoteGateway.js';
+import GuildResource from './guildResource.ts';
+import AudioHandler from '../audio/audioHandler.ts';
+import GuildDatabase from '../data/db.ts';
+import { BotnekConfig } from './config.ts';
+import BetterTTVEmoteGateway from '../commands/emotes/betterTTVEmoteGateway.ts';
+import SevenTVEmoteGateway from '../commands/emotes/sevenTVEmoteGateway.ts';
 
 export interface BotShim {
     client: Client,

@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.js';
+import { BotShim } from '../../types/command.ts';
 
 export default async function sfxHelp(client: BotShim, interaction: ChatInputCommandInteraction<'cached'> | Message<true>) {
     const aliasHelp = {

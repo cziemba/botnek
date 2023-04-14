@@ -13,21 +13,25 @@ import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import * as fs from 'fs';
 import * as path from 'path';
-import Commands from './commands.js';
-import AudioHandler from './audio/audioHandler.js';
-import GuildResource from './types/guildResource.js';
-import log from './logging/logging.js';
-import GuildDatabase from './data/db.js';
-import { BotnekConfig } from './types/config.js';
-import handleSingleEmote from './commands/emotes/emote.js';
-import { isEmoteAlias } from './data/types/emote.js';
-import EmoteConfigManager from './data/emoteConfigManager.js';
-import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.js';
-import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway.js';
-import { helpMsgOptions } from './commands/help.js';
+import Commands from './commands.ts';
+import AudioHandler from './audio/audioHandler.ts';
+import GuildResource from './types/guildResource.ts';
+import log from './logging/logging.ts';
+import GuildDatabase from './data/db.ts';
+import { BotnekConfig } from './types/config.ts';
+import handleSingleEmote from './commands/emotes/emote.ts';
+import { isEmoteAlias } from './data/types/emote.ts';
+import EmoteConfigManager from './data/emoteConfigManager.ts';
+import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.ts';
+import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway.ts';
+import { helpMsgOptions } from './commands/help.ts';
 
 const DB_FILE: string = 'db.json';
 
+/**
+ * Represents the Botnek Discord bot.
+ * @class
+ */
 export default class Botnek {
     private readonly client: Client;
 
@@ -37,6 +41,11 @@ export default class Botnek {
 
     private readonly config: BotnekConfig;
 
+    /**
+     * Creates an instance of Botnek.
+     * @constructor
+     * @param {BotnekConfig} config - The configuration for Botnek.
+     */
     constructor(config: BotnekConfig) {
         this.audioHandlers = new GuildResource<AudioHandler>();
         this.databases = new GuildResource<GuildDatabase>();
@@ -151,6 +160,12 @@ export default class Botnek {
         });
     }
 
+    /**
+     * Tries to handle emotes in a message.
+     * @private
+     * @param {Message<true>} message - The message to handle emotes in.
+     * @returns {Promise<void>} - A Promise that resolves when emotes are handled.
+     */
     private async tryHandleEmote(message: Message<true>): Promise<void> {
         // TODO: handle multiple emotes in one message https://imagemagick.org/Usage/anim_mods/#merging
         const msg = message.content.trim();
@@ -174,6 +189,11 @@ export default class Botnek {
         );
     }
 
+    /**
+     * Initializes the help channel for Botnek.
+     * @private
+     * @returns {Promise<void>} - A Promise that resolves when the help channel is initialized.
+     */
     private async initHelpChannel(guild: Guild): Promise<void> {
         const botnekHelpName = 'botnek2-help';
         let botnekHelpChannel = guild.channels.cache.find((c) => c.name === botnekHelpName);
@@ -217,6 +237,13 @@ export default class Botnek {
         await botMsg.edit(helpMsgOptions() as MessageEditOptions);
     }
 
+    /**
+     * Initializes guild-specific resources for Botnek, such as settings and data, for a given guild ID.
+     *
+     * @param {string} guildId - The ID of the guild for which to initialize resources.
+     * @param {string} dataRoot - The root directory path where guild-specific data is stored.
+     * @returns {Promise<void>} - A Promise that resolves when the guild resources are initialized.
+     */
     private initGuildResources(guildId: string, dataRoot: string) {
         const guildDbPath = path.resolve(`${dataRoot}/${guildId}`);
         fs.mkdirSync(guildDbPath, { recursive: true });

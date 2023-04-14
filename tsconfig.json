@@ -5,6 +5,8 @@
     "inlineSourceMap": true,
     "module": "ESNext",
     "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "noEmitOnError": true,
     "noImplicitAny": false,
     "outDir": "dist",

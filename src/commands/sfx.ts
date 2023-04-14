@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Command } from '../types/command.js';
-import sfxHelp from './sfx/help.js';
-import { sfxDel } from './sfx/del.js';
-import { sfxAdd } from './sfx/add.js';
-import { sfxChain } from './sfx/chain.js';
-import { sfxPlay } from './sfx/play.js';
-import sfxList from './sfx/list.js';
+import { Command } from '../types/command.ts';
+import sfxHelp from './sfx/help.ts';
+import { sfxDel } from './sfx/del.ts';
+import { sfxAdd } from './sfx/add.ts';
+import { sfxChain } from './sfx/chain.ts';
+import { sfxPlay } from './sfx/play.ts';
+import sfxList from './sfx/list.ts';
 
 const Sfx: Command = {
     data: new SlashCommandBuilder()

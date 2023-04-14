@@ -1,8 +1,8 @@
-import { GuildData, SfxModifier, isSfxModifier } from '../../data/types.js';
-import { LowWithLodash } from '../../data/db.js';
-import log from '../../logging/logging.js';
-import LocalTrack from '../../audio/tracks/localTrack.js';
-import ffmpegAdjustRate from '../../utils/ffmpeg.js';
+import { GuildData, SfxModifier, isSfxModifier } from '../../data/types.ts';
+import { LowWithLodash } from '../../data/db.ts';
+import log from '../../logging/logging.ts';
+import LocalTrack from '../../audio/tracks/localTrack.ts';
+import ffmpegAdjustRate from '../../utils/ffmpeg.ts';
 
 export function sfxAliasToString(sfxAlias: string, sfxModifiers: SfxModifier[]): string {
     const modifiersString = sfxModifiers.length === 0 ? ''

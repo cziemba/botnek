@@ -2,7 +2,7 @@
  * Use {@link isValidSfxAlias} to validate alias.
  */
 import { Snowflake } from 'discord-api-types/globals';
-import { EmoteConfig } from './types/emote.js';
+import { EmoteConfig } from './types/emote.ts';
 
 export type SfxAlias = string & { __validSfxAlias: true };
 

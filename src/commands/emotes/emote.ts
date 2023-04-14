@@ -1,11 +1,11 @@
 import { Message, WebhookClient } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { BotShim } from '../../types/command.js';
-import log from '../../logging/logging.js';
-import { EMOTE_HOOK_NAME } from '../emote.js';
-import { Emote } from '../../data/types/emote.js';
-import EmoteGateway from './emoteGateway.js';
+import { BotShim } from '../../types/command.ts';
+import log from '../../logging/logging.ts';
+import { EMOTE_HOOK_NAME } from '../emote.ts';
+import { Emote } from '../../data/types/emote.ts';
+import EmoteGateway from './emoteGateway.ts';
 
 /**
  * 1. Interpret the message content as an emote (passed filter already)

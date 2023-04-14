@@ -17,6 +17,8 @@ settings:
     '@typescript-eslint/parser':
         - '.ts'
 rules:
+  import/extensions:
+    - off
   indent:
     - off
   '@typescript-eslint/indent':

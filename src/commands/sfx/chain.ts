@@ -1,10 +1,10 @@
 import path from 'path';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.js';
-import log from '../../logging/logging.js';
+import { BotShim } from '../../types/command.ts';
+import log from '../../logging/logging.ts';
 import {
     handleModifiers, parseSfxAlias, sfxAliasToString, sfxExists,
-} from './common.js';
+} from './common.ts';
 
 export interface SfxChainParams {
     chain?: string

@@ -1,11 +1,11 @@
 import path from 'path';
 import fs from 'fs';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.js';
-import { isValidSfxAlias } from '../../data/types.js';
-import log from '../../logging/logging.js';
-import YoutubeTrack from '../../audio/tracks/youtubeTrack.js';
-import { sfxExists } from './common.js';
+import { BotShim } from '../../types/command.ts';
+import { isValidSfxAlias } from '../../data/types.ts';
+import log from '../../logging/logging.ts';
+import YoutubeTrack from '../../audio/tracks/youtubeTrack.ts';
+import { sfxExists } from './common.ts';
 
 export interface SfxAddParams {
     alias?: string;
