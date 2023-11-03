@@ -1,4 +1,4 @@
-import {isSfxModifier, SfxModifier} from '../../src/data/types.ts';
+import { SfxModifier, isSfxModifier } from '../../src/data/types.ts';
 
 describe('types', () => {
     test('isSfxModifier', () => {

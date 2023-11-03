@@ -3,11 +3,18 @@ import { CommandInteraction, Message } from 'discord.js';
 import { BotShim } from '../../types/command.ts';
 import log from '../../logging/logging.ts';
 import {
-    handleModifiers, parseSfxAlias, sfxAliasToString, sfxExists,
+    handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString,
 } from './common.ts';
+import { SfxAlias, SfxModifier } from '../../data/types.js';
 
 export interface SfxChainParams {
     chain?: string
+}
+
+interface ProcessedSfx {
+    parsedAlias: SfxAlias,
+    modifiers: SfxModifier[],
+    path?: string,
 }
 
 export async function sfxChain(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, params: SfxChainParams) {
@@ -22,15 +29,22 @@ export async function sfxChain(client: BotShim, interaction: CommandInteraction<
         return;
     }
 
-    const sfxs = params.chain.split(/[ ,]+/).map((s) => parseSfxAlias(s));
+    const processedSfx = params.chain.split(/[ ,]+/)
+        .map((s) => parseSfxAlias(db, s))
+        .map((sfx) => ({
+            ...sfx,
+            path: loadSfxPath(db, sfx.parsedAlias),
+        } as ProcessedSfx));
 
-    if (sfxs.length > 5) {
+    if (processedSfx.length > 5) {
         await interaction.reply({
             content: 'Can only chain up to 5 sound effects, you psychopath.',
             ephemeral: true,
         });
         return;
-    } if (sfxs.length === 0) {
+    }
+
+    if (processedSfx.length === 0) {
         await interaction.reply({
             content: 'Must chain at least one sfx',
             ephemeral: true,
@@ -38,8 +52,8 @@ export async function sfxChain(client: BotShim, interaction: CommandInteraction<
         return;
     }
 
-    const badSfxs = sfxs.map((x) => x.parsedAlias).filter((x) => !sfxExists(db, x));
-    if (badSfxs.length !== 0) {
+    const badSfxs = processedSfx.filter((sfx) => !!sfx.path).map((sfx) => sfx.parsedAlias);
+    if (badSfxs.length > 0) {
         log.warn(`Attempted to chain non-sfx [${badSfxs.join(',')}]`);
         await interaction.reply({
             content: `The following sfx don't exist: \`[${badSfxs.join(', ')}]\``,
@@ -49,16 +63,15 @@ export async function sfxChain(client: BotShim, interaction: CommandInteraction<
     }
 
     const guildDir = path.resolve(path.join(client.config.dataRoot, interaction.guildId));
-    const soundsDb = db.chain.get('sfx').get('sounds');
     const enqueuePromises: Promise<void>[] = [];
-    for (let i = 0; i < sfxs.length; i += 1) {
-        const alias = sfxs[i].parsedAlias;
-        const mods = sfxs[i].modifiers;
-        const sfxPath = soundsDb.get(alias).value();
+    processedSfx.forEach((sfx) => {
+        const alias = sfx.parsedAlias;
+        const mods = sfx.modifiers;
+        const sfxPath = sfx.path!;
         enqueuePromises.push(audio.enqueue({ interaction, track: handleModifiers(sfxPath, alias, mods, guildDir) }));
-    }
+    });
     await Promise.all(enqueuePromises);
     await interaction.reply({
-        content: `Queued chain of ${sfxs.map((s) => sfxAliasToString(s.parsedAlias, s.modifiers)).join(' -> ')}`,
+        content: `Queued chain of ${processedSfx.map((s) => sfxAliasToString(s.parsedAlias, s.modifiers)).join(' -> ')}`,
     });
 }

@@ -37,9 +37,20 @@ const ffmpegProcessAudio = (inFile: string, guildDir: string, audioFilters: stri
     }
 };
 
-const ffmpegAdjustRate = (inFile: string, guildDir: string, rate: number): string => {
+export const ffmpegAdjustRate = (inFile: string, guildDir: string, rate: number): string => {
     log.debug(`FFMPEG Adjust rate=${rate}`);
     return ffmpegProcessAudio(inFile, guildDir, `asetrate=44100*${rate}, aresample=44100`);
 };
 
-export default ffmpegAdjustRate;
+/**
+ * Get audio file duration in seconds
+ */
+export const ffmpegDurationSeconds = (inFile: string): string => {
+    try {
+        const durationSeconds = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${inFile}`);
+        return durationSeconds.toString();
+    } catch (e) {
+        log.error(e);
+        throw e;
+    }
+};

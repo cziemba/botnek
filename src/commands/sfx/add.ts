@@ -5,12 +5,14 @@ import { BotShim } from '../../types/command.ts';
 import { isValidSfxAlias } from '../../data/types.ts';
 import log from '../../logging/logging.ts';
 import YoutubeTrack from '../../audio/tracks/youtubeTrack.ts';
-import { sfxExists } from './common.ts';
+import { RANDOM, sfxExists } from './common.ts';
 
 export interface SfxAddParams {
     alias?: string;
     url?: string;
 }
+
+export const RESERVED_ALIAS = [RANDOM];
 
 export async function sfxAdd(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, params: SfxAddParams): Promise<void> {
     const db = client.databases.get(interaction.guildId)?.db!;
@@ -21,6 +23,17 @@ export async function sfxAdd(client: BotShim, interaction: CommandInteraction<'c
             content: 'Invalid input, please provide an alias and url',
             ephemeral: true,
         });
+        return;
+    }
+
+    if (RESERVED_ALIAS.includes(alias)) {
+        log.warn(`Reserved alias provided ${alias}`);
+        await interaction.reply(
+            {
+                content: `\`${alias}\` is a reserved alias.`,
+                ephemeral: true,
+            },
+        );
         return;
     }
 

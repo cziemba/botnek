@@ -3,7 +3,7 @@ import { CommandInteraction, Message } from 'discord.js';
 import { BotShim } from '../../types/command.ts';
 import log from '../../logging/logging.ts';
 import {
-    handleModifiers, parseSfxAlias, sfxAliasToString, sfxExists,
+    handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString,
 } from './common.ts';
 
 export interface SfxPlayParams {
@@ -23,11 +23,13 @@ export async function sfxPlay(client: BotShim, interaction: CommandInteraction<'
         return;
     }
 
-    const { parsedAlias, modifiers } = parseSfxAlias(alias);
+    const { parsedAlias, modifiers } = parseSfxAlias(db, alias);
 
     log.debug(`Parsed sfx play: ${parsedAlias} modifiers=[${modifiers.join(', ')}]`);
 
-    if (!sfxExists(db, parsedAlias)) {
+    const sfxPath = loadSfxPath(db, parsedAlias);
+
+    if (!sfxPath) {
         log.info(`Unknown sfx ${parsedAlias}`);
         await interaction.reply({
             content: `\`${parsedAlias}\` does not exist!`,
@@ -36,7 +38,6 @@ export async function sfxPlay(client: BotShim, interaction: CommandInteraction<'
         return;
     }
 
-    const sfxPath = db.chain.get('sfx').get('sounds').get(parsedAlias).value();
     const guildDir = path.resolve(path.join(client.config.dataRoot, interaction.guildId));
 
     await interaction.reply({

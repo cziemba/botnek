@@ -1,5 +1,5 @@
-import {parseSfxAlias} from '../../../src/commands/sfx/common.ts';
-import {SfxModifier} from '../../../src/data/types.ts';
+import { parseSfxAlias } from '../../../src/commands/sfx/common.ts';
+import { SfxModifier } from '../../../src/data/types.ts';
 
 describe('common sfx', () => {
     test('parseSfxAlias', () => {
