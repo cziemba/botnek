@@ -6,7 +6,7 @@ const config: Config.InitialOptions = {
     testEnvironment: 'node',
     transform: {
         '^.+\\.ts$': [
-            'ts-jest',
+            '@swc/jest',
             {
                 useESM: true,
                 tsconfig: './tsconfig.json',

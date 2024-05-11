@@ -97,7 +97,7 @@ export async function sfxAdd(client: BotShim, interaction: CommandInteraction<'c
         })
         .catch((err) => {
             interaction.reply({
-                content: `An error occurred: ${err}`,
+                content: `An error occurred [see logs for full details]: \`\`\`\n${err.message.substring(0, 1500)}\n[...TRUNCATED...]\n\`\`\``,
                 ephemeral: true,
             });
         });

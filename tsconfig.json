@@ -3,8 +3,8 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "inlineSourceMap": true,
-    "module": "ESNext",
-    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "noEmitOnError": true,
@@ -16,6 +16,11 @@
     "typeRoots": [
       "node_modules/@types"
     ]
+  },
+  "ts-node": {
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "esm": true
   },
   "include": [
     "src/**/*.ts",

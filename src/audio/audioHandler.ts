@@ -52,6 +52,7 @@ export default class AudioHandler {
     public async enqueue(request: AudioRequest): Promise<void> {
         log.debug(`Enqueuing ${request.track.title}`);
         this.queue.enqueue(request);
+        log.debug(`Current queue: [${this.queue.queue.map((r) => r.track.title).join(',')}]`);
         await this.playNextFromQueue();
     }
 

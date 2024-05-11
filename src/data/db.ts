@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import lodash from 'lodash';
-import { JSONFileSync, LowSync } from 'lowdb';
+import { LowSync } from 'lowdb';
+import { JSONFileSync } from 'lowdb/node';
 import log from '../logging/logging.ts';
 import { DEFAULT_GUILD_DATA, GuildData } from './types.ts';
 
@@ -13,7 +14,7 @@ export default class GuildDatabase {
 
     constructor(filePath: string) {
         const adapter = new JSONFileSync<GuildData>(filePath);
-        this.db = new LowWithLodash(adapter);
+        this.db = new LowWithLodash(adapter, DEFAULT_GUILD_DATA);
 
         if (!fs.existsSync(filePath)) {
             log.info(`Database ${filePath} does not exist. Writing it.`);
