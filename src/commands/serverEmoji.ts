@@ -5,6 +5,7 @@ import os from 'os';
 import { BotShim, Command } from '../types/command.ts';
 import EmoteGateway from './emotes/emoteGateway.ts';
 import { convertToGif, extractFrameDelay } from '../utils/imagemagick.ts';
+import log from '../logging/logging.js';
 
 async function addEmoji(
     client: BotShim,
@@ -36,6 +37,7 @@ async function addEmoji(
     try {
         await emojiManager.create({ attachment: emoteFilePath, name: alias });
     } catch (e1) {
+        log.warn(e1, 'There was a problem setting emoji. Trying one more time with reduced size.');
         const tmpFile = path.resolve(os.tmpdir(), `${emote.id}-shrunk.gif`);
         const delay = await extractFrameDelay(emoteFilePath);
         await convertToGif(emoteFilePath, tmpFile, delay, '64x64^');
@@ -43,6 +45,7 @@ async function addEmoji(
         try {
             await emojiManager.create({ attachment: tmpFile, name: alias });
         } catch (e2) {
+            log.warn(e2, 'Second attempt failed, giving up.');
             await interaction.reply({
                 content: `Failed to upload after two attempts at optimizing. Emoji <${props.url}> is probably too large.`,
             });

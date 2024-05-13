@@ -1,16 +1,23 @@
-/**
- * Use {@link isValidSfxAlias} to validate alias.
- */
 import { Snowflake } from 'discord-api-types/globals';
 import { EmoteConfig } from './types/emote.ts';
 
+/**
+ * SfxAlias w/ auxiliary type union to ensure strings are not accepted in place.
+ */
 export type SfxAlias = string & { __validSfxAlias: true };
 
+/**
+ * Sfx Alias type check and casting; alphanumeric only.
+ * @param alias alias to check.
+ */
 export function isValidSfxAlias(alias: string): alias is SfxAlias {
     const re = /^[a-z0-9]{1,20}$/;
     return re.test(alias);
 }
 
+/**
+ * Supported sfx mods
+ */
 export enum SfxModifier {
     'UNKNOWN' = 'UNKNOWN',
     'TURBO' = 'TURBO',
@@ -19,6 +26,10 @@ export enum SfxModifier {
     'SLOW2' = 'SLOW2',
 }
 
+/**
+ * Type check and conversion for potential sfx modifiers.
+ * @param modifier modifier to check/cast.
+ */
 export function isSfxModifier(modifier: string): SfxModifier {
     const upperModifier = modifier.toUpperCase();
     if (upperModifier in SfxModifier) {
@@ -27,12 +38,16 @@ export function isSfxModifier(modifier: string): SfxModifier {
     return SfxModifier.UNKNOWN;
 }
 
-// Sfx is registered per alias
+/**
+ * Sound effects: key/value pairs of alias to sound file
+ */
 export type SfxConfig = {
     sounds: { [ key: SfxAlias ]: string };
 };
 
-// Webhooks are per channel
+/**
+ * Webhooks: registered webhooks are identified by channel id
+ */
 export type WebhookConfig = {
     [ channel: Snowflake ]: {
         hookName: string,
@@ -41,6 +56,9 @@ export type WebhookConfig = {
     }[];
 };
 
+/**
+ * Model for the per guild database
+ */
 export type GuildData = {
     sfx: SfxConfig;
     webhooks: WebhookConfig;

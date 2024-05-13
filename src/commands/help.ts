@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { InteractionReplyOptions, MessageCreateOptions } from 'discord.js';
+import { ChatInputCommandInteraction, Message, SharedSlashCommand } from 'discord.js';
 import { Command } from '../types/command.ts';
 import Play from './play.ts';
 import Stop from './stop.ts';
@@ -11,10 +11,10 @@ import ChatGPT from './chatgpt.ts';
 /**
  * Exported for use in the bot news channel.
  */
-export const helpMsgOptions = (): InteractionReplyOptions | MessageCreateOptions => {
+export const helpMsgOptions = () => {
     const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote, ChatGPT];
 
-    const cmdToMd = (cmd: SlashCommandBuilder, helpText?: string) => ({
+    const cmdToMd = (cmd: SharedSlashCommand, helpText?: string) => ({
         name: `${cmd.description}`,
         value: `${helpText}`,
     });
@@ -31,7 +31,7 @@ export const helpMsgOptions = (): InteractionReplyOptions | MessageCreateOptions
     };
 };
 
-const botHelp = async (client, interaction) => {
+const botHelp = async (interaction: ChatInputCommandInteraction<'cached'> | Message<true>) => {
     await interaction.reply(helpMsgOptions());
 };
 
@@ -39,10 +39,10 @@ export const Help: Command = {
     data: new SlashCommandBuilder()
         .setName('help')
         .setDescription('Get help with commands'),
-    executeCommand: async (client, interaction) => {
-        await botHelp(client, interaction);
+    executeCommand: async (_client, interaction) => {
+        await botHelp(interaction);
     },
-    executeMessage: async (client, message) => {
-        await botHelp(client, message);
+    executeMessage: async (_client, message) => {
+        await botHelp(message);
     },
 };

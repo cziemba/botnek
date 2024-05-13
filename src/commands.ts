@@ -7,7 +7,7 @@ import Emote from './commands/emote.ts';
 import ServerEmoji from './commands/serverEmoji.ts';
 import ChatGPT from './commands/chatgpt.ts';
 
-const Commands: Command[] = [
+const COMMANDS: Command[] = [
     Sfx,
     Play,
     Stop,
@@ -17,4 +17,4 @@ const Commands: Command[] = [
     ChatGPT,
 ];
 
-export default Commands;
+export default COMMANDS;

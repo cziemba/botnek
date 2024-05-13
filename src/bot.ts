@@ -1,19 +1,23 @@
 import {
+    CacheType,
     ChannelType,
     ChatInputCommandInteraction,
     Client,
     GatewayIntentBits,
     Guild,
+    Interaction,
     Message,
     MessageCreateOptions,
     MessageEditOptions,
+    OverwriteResolvable,
     PermissionFlagsBits,
+    TextChannel,
 } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import * as fs from 'fs';
 import * as path from 'path';
-import Commands from './commands.ts';
+import COMMANDS from './commands.ts';
 import AudioHandler from './audio/audioHandler.ts';
 import GuildResource from './types/guildResource.ts';
 import log from './logging/logging.ts';
@@ -74,7 +78,15 @@ export default class Botnek {
 
             const rest = new REST({ version: '10' }).setToken(config.token);
 
-            // Init for each guild
+            // Set any bot-level commands that don't require guild info/presence.
+            await rest.put(
+                Routes.applicationCommands(clientId),
+                {
+                    body: [],
+                },
+            );
+
+            // Init commands/db for each guild
             await Promise.all(guilds.map(async (g) => {
                 log.info(`${this.client.user?.username} is running [clientId=${clientId}, guildId=${g.id}] in ${g.name}`);
 
@@ -85,18 +97,19 @@ export default class Botnek {
                 return rest.put(
                     Routes.applicationGuildCommands(clientId, g.id),
                     {
-                        body: Commands.map((c) => c.data),
+                        body: COMMANDS.map((c) => c.data),
                     },
                 );
             }));
         });
 
-        this.client.on('interactionCreate', async (interaction) => {
+        // Register the slash command handler and routing logic.
+        this.client.on('interactionCreate', async (interaction: Interaction<CacheType>) => {
             if (!interaction.isCommand() || !interaction.inCachedGuild()) return;
 
             log.info(`${interaction.commandName} command received!`);
 
-            const slashCommand = Commands.find((c) => c.data.name === interaction.commandName);
+            const slashCommand = COMMANDS.find((c) => c.data.name === interaction.commandName);
             if (!slashCommand || !(interaction instanceof ChatInputCommandInteraction)) {
                 await interaction.followUp({ content: 'Oops, an error occurred!', ephemeral: true });
                 return;
@@ -117,8 +130,10 @@ export default class Botnek {
             );
         });
 
+        // Register the prefix command handler and routing logic.
         this.client.on('messageCreate', async (message: Message) => {
             if (message.author.bot || !message.inGuild()) return;
+            // First assume the message is an emote.
             if (!message.content.startsWith('!')) {
                 await this.tryHandleEmote(message);
                 return;
@@ -126,7 +141,7 @@ export default class Botnek {
             const cmdArgs = message.content.substring(1).split(' ');
             log.info(`${cmdArgs[0]} command received!`);
 
-            const prefixCommand = Commands.find((c) => c.data.name === cmdArgs[0]);
+            const prefixCommand = COMMANDS.find((c) => c.data.name === cmdArgs[0]);
             if (!prefixCommand) {
                 log.info(`Ignoring unknown cmd ${cmdArgs[0]}`);
                 return;
@@ -196,38 +211,61 @@ export default class Botnek {
      */
     private async initHelpChannel(guild: Guild): Promise<void> {
         const botnekHelpName = 'botnek2-help';
-        let botnekHelpChannel = guild.channels.cache.find((c) => c.name === botnekHelpName);
+        let botnekHelpChannel = guild.channels.cache
+            .filter((c) => c.type === ChannelType.GuildText)
+            .map((c) => c as TextChannel)
+            .find((c) => c.name === botnekHelpName);
+
+        const helpChannelPermissions: OverwriteResolvable[] = [
+            {
+                id: guild.roles.everyone,
+                deny: [
+                    PermissionFlagsBits.CreatePublicThreads,
+                    PermissionFlagsBits.CreatePublicThreads,
+                    PermissionFlagsBits.CreatePrivateThreads,
+                    PermissionFlagsBits.SendTTSMessages,
+                    PermissionFlagsBits.SendMessagesInThreads,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.AddReactions,
+                    PermissionFlagsBits.UseApplicationCommands,
+                ],
+            },
+            {
+                id: this.client.user!.id,
+                allow: [
+                    PermissionFlagsBits.SendMessages,
+                ],
+            },
+        ];
+
         if (!botnekHelpChannel) {
             log.info('Creating the help channel');
             botnekHelpChannel = await guild.channels.create(
                 {
                     name: botnekHelpName,
-                    type: ChannelType.GuildAnnouncement,
+                    type: ChannelType.GuildText,
                     topic: 'How to use botnek!',
-                    permissionOverwrites: [
-                        {
-                            id: guild.id,
-                            deny: [
-                                PermissionFlagsBits.CreatePublicThreads,
-                                PermissionFlagsBits.CreatePublicThreads,
-                                PermissionFlagsBits.CreatePrivateThreads,
-                                PermissionFlagsBits.SendTTSMessages,
-                                PermissionFlagsBits.SendMessagesInThreads,
-                                PermissionFlagsBits.SendMessages,
-                                PermissionFlagsBits.AddReactions,
-                                PermissionFlagsBits.UseApplicationCommands,
-                            ],
-                        },
-                    ],
+                    permissionOverwrites: helpChannelPermissions,
                 },
             );
+        } else {
+            log.info('Updating help channel (permissions-only)');
+            await botnekHelpChannel.permissionOverwrites.set(helpChannelPermissions);
         }
 
         if (!botnekHelpChannel.isTextBased()) {
             throw new Error(`Help channel ${botnekHelpName} exists but is corrupted. Please delete it and try again.`);
         }
-        const botMsg = [...(await botnekHelpChannel.messages.fetch()).values()]
-            .find((m) => m.author.id === this.client.user?.id);
+        const helpChannelMsgs = [...(await botnekHelpChannel.messages.fetch()).values()];
+        const botMsg = helpChannelMsgs
+            .sort((m) => m.createdTimestamp)
+            .findLast((m) => m?.author.id === this.client.user?.id);
+
+        // Delete all other messages in help channel.
+        await Promise.all(helpChannelMsgs
+            .filter((m) => m.id !== botMsg?.id)
+            .map((m) => m.delete()));
+
         if (!botMsg) {
             log.info('Initializing the help text');
             await botnekHelpChannel.send(helpMsgOptions() as MessageCreateOptions);

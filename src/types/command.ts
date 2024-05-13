@@ -1,4 +1,6 @@
-import { ChatInputCommandInteraction, Client, Message } from 'discord.js';
+import {
+    ChatInputCommandInteraction, Client, Message, SharedSlashCommand,
+} from 'discord.js';
 import GuildResource from './guildResource.ts';
 import AudioHandler from '../audio/audioHandler.ts';
 import GuildDatabase from '../data/db.ts';
@@ -17,10 +19,22 @@ export interface BotShim {
     }
 }
 
+/**
+ *
+ */
 export interface Command {
-    data: any;
+    data: SharedSlashCommand;
     helpText?: string;
+    /**
+     * Slash command hook, implementation is required as all commands are slash-commands by default.
+     */
     executeCommand: (bot: BotShim, interaction: ChatInputCommandInteraction<'cached'>) => Promise<void>;
+    /**
+     * Message prefix hook, implemen
+     * @param bot
+     * @param message
+     * @param args
+     */
     executeMessage: (bot: BotShim, message: Message<true>, args: string[]) => Promise<void>;
     requireUserInChannel?: boolean;
 }

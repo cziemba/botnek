@@ -8,6 +8,11 @@ import { ffmpegAdjustRate } from '../../utils/ffmpeg.ts';
 
 export const RANDOM = 'random';
 
+/**
+ * Generate formatted string for a given sfx alias + modifiers
+ * @param sfxAlias
+ * @param sfxModifiers
+ */
 export function sfxAliasToString(sfxAlias: SfxAlias, sfxModifiers: SfxModifier[]): string {
     const modifiersString = sfxModifiers.length === 0 ? ''
         : `#${sfxModifiers.join('#')}`;
