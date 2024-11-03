@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import log from '../logging/logging.ts';
-import { Command } from '../types/command.ts';
+import log from '../logging/logging';
+import { Command } from '../types/command';
 
 const stopSound = async (client, interaction) => {
     if (interaction.guildId) {

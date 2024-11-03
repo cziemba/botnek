@@ -2,7 +2,7 @@ import * as child_process from 'child_process';
 import fs from 'fs';
 import * as mime from 'mime-types';
 import { promisify } from 'util';
-import log from '../logging/logging.ts';
+import log from '../logging/logging';
 
 const exec = promisify(child_process.exec);
 const DEFAULT_RESIZE = '112x112^';

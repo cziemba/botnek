@@ -1,5 +1,5 @@
 import { CommandInteraction, Message } from 'discord.js';
-import Track from './tracks/track.ts';
+import Track from './tracks/track';
 
 export interface AudioRequest {
     interaction: CommandInteraction<'cached'> | Message<true>; // TODO: ValidatedInteraction, an interaction with non-null user, channel and guild

@@ -1,14 +1,8 @@
-import LocalTrack from '../../audio/tracks/localTrack.ts';
-import { LowWithLodash } from '../../data/db.ts';
-import {
-    GuildData,
-    SfxAlias,
-    SfxModifier,
-    isSfxModifier,
-    isValidSfxAlias,
-} from '../../data/types.ts';
-import log from '../../logging/logging.ts';
-import { ffmpegAdjustRate } from '../../utils/ffmpeg.ts';
+import LocalTrack from '../../audio/tracks/localTrack';
+import { LowWithLodash } from '../../data/db';
+import { GuildData, SfxAlias, SfxModifier, isSfxModifier, isValidSfxAlias } from '../../data/types';
+import log from '../../logging/logging';
+import { ffmpegAdjustRate } from '../../utils/ffmpeg';
 
 export const RANDOM = 'random';
 

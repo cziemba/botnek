@@ -1,21 +1,36 @@
 import fs from 'fs';
 import fetch from 'node-fetch';
-import { EmoteSource } from '../../../data/types/emote';
-import { BotnekConfig } from '../../../types/config';
-import BetterTTVEmoteGateway from '../betterTTVEmoteGateway';
+import { createWriteStream } from 'node:fs';
+import { PassThrough, Readable } from 'node:stream';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import BetterTTVEmoteGateway from '../../../src/commands/emotes/betterTTVEmoteGateway';
+import { EmoteSource } from '../../../src/data/types/emote';
+import { BotnekConfig } from '../../../src/types/config';
 
-jest.mock('node-fetch');
-jest.mock('fs');
+vi.mock('fs');
+
+vi.mock('../../../src/utils/imagemagick', () => {
+    return {
+        convertToGif: vi.fn(),
+        extractFrameDelay: vi.fn().mockResolvedValue(20),
+    };
+});
+
+vi.mock('node-fetch', () => {
+    return {
+        default: vi.fn(),
+    };
+});
 
 describe('BetterTTVEmoteGateway', () => {
     let gateway: BetterTTVEmoteGateway;
     const mockConfig: BotnekConfig = {
-        emoteRootPath: '/mock/path',
-    } as BotnekConfig;
+        token: 'test',
+        dataRoot: '/mock/path',
+    };
 
     beforeEach(() => {
         gateway = new BetterTTVEmoteGateway(mockConfig);
-        jest.clearAllMocks();
     });
 
     it('should parse BTTV URL correctly', () => {
@@ -31,19 +46,28 @@ describe('BetterTTVEmoteGateway', () => {
     });
 
     it('should fetch emote data correctly', async () => {
+        // @ts-ignore
         const mockEmoteData = {
             id: '5e76d338d6581c3724c0f0b2',
             code: 'catJAM',
             imageType: 'gif',
         };
 
-        const mockResponse = {
-            ok: true,
-            json: jest.fn().mockResolvedValue(mockEmoteData),
-        };
-        (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as any);
+        (fetch as Mock<typeof fetch>)
+            .mockResolvedValueOnce({
+                json: vi.fn().mockResolvedValue(mockEmoteData as any),
+                ok: true,
+            } as any)
+            .mockResolvedValueOnce({
+                body: Readable.from(['test-emote-data-from-cdn']),
+                ok: true,
+            } as any);
 
-        (fs.existsSync as jest.MockedFunction<typeof fs.existsSync>).mockReturnValue(false);
+        (fs.existsSync as Mock<typeof fs.existsSync>).mockReturnValue(false);
+
+        const writable = new PassThrough();
+        const writeSpy = vi.spyOn(writable, 'write');
+        vi.mocked(createWriteStream).mockReturnValueOnce(writable);
 
         const emote = await gateway.fetchEmote('5e76d338d6581c3724c0f0b2');
 
@@ -56,15 +80,18 @@ describe('BetterTTVEmoteGateway', () => {
         expect(fetch).toHaveBeenCalledWith(
             'https://api.betterttv.net/3/emotes/5e76d338d6581c3724c0f0b2',
         );
+        expect(fetch).toHaveBeenCalledWith(
+            'https://cdn.betterttv.net/emote/5e76d338d6581c3724c0f0b2/3x',
+        );
+
+        expect(writeSpy).toHaveBeenCalledWith('test-emote-data-from-cdn');
     });
 
     it('should throw error for invalid emote ID', async () => {
-        const mockResponse = {
+        (fetch as Mock<typeof fetch>).mockResolvedValueOnce({
             ok: false,
             statusText: 'Not Found',
-        };
-        (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue(mockResponse as any);
-
+        } as any);
         await expect(gateway.fetchEmote('invalid_id')).rejects.toThrow('Not Found');
     });
 });

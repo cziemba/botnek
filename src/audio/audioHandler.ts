@@ -10,8 +10,8 @@ import {
 } from '@discordjs/voice';
 import { GuildMember } from 'discord.js';
 import { promisify } from 'node:util';
-import log from '../logging/logging.ts';
-import AudioQueue, { AudioRequest } from './audioQueue.ts';
+import log from '../logging/logging';
+import AudioQueue, { AudioRequest } from './audioQueue';
 
 const wait = promisify(setTimeout);
 

@@ -1,9 +1,9 @@
 import { CommandInteraction, Message } from 'discord.js';
 import fs from 'fs';
-import { isValidSfxAlias } from '../../data/types.ts';
-import log from '../../logging/logging.ts';
-import { BotShim } from '../../types/command.ts';
-import { sfxExists } from './common.ts';
+import { isValidSfxAlias } from '../../data/types';
+import log from '../../logging/logging';
+import { BotShim } from '../../types/command';
+import { sfxExists } from './common';
 
 export interface SfxDelParams {
     alias?: string;

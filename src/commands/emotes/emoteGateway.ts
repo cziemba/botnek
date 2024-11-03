@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { Emote } from '../../data/types/emote.ts';
-import { BotnekConfig } from '../../types/config.ts';
+import { Emote } from '../../data/types/emote';
+import { BotnekConfig } from '../../types/config';
 
 /**
  * Parent class for interacting with various emote platforms (namely BTTV and 7TV).

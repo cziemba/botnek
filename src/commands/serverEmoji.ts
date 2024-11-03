@@ -3,9 +3,9 @@ import { CommandInteraction, Message } from 'discord.js';
 import os from 'os';
 import path from 'path';
 import log from '../logging/logging.js';
-import { BotShim, Command } from '../types/command.ts';
-import { convertToGif, extractFrameDelay } from '../utils/imagemagick.ts';
-import EmoteGateway from './emotes/emoteGateway.ts';
+import { BotShim, Command } from '../types/command';
+import { convertToGif, extractFrameDelay } from '../utils/imagemagick';
+import EmoteGateway from './emotes/emoteGateway';
 
 async function addEmoji(
     client: BotShim,

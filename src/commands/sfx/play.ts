@@ -1,8 +1,8 @@
 import { CommandInteraction, Message } from 'discord.js';
 import path from 'path';
-import log from '../../logging/logging.ts';
-import { BotShim } from '../../types/command.ts';
-import { handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString } from './common.ts';
+import log from '../../logging/logging';
+import { BotShim } from '../../types/command';
+import { handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString } from './common';
 
 export interface SfxPlayParams {
     alias?: string;

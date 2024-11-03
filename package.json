@@ -13,7 +13,8 @@
     "lint:fix": "npm run lint -- --fix",
     "prettier": "prettier src test --check",
     "prettier:fix": "npm run prettier -- --write",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "redeploy": "pm2 restart botnek2"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "lodash": "^4.17.21",
     "lowdb": "^7.0.1",
     "mime-types": "^2.1.35",
+    "moment": "^2.0.0",
     "node-fetch": "^3.3.1",
     "opusscript": "^0.1.1",
     "pino": "^9.0.0",
@@ -49,23 +51,20 @@
     "@stylistic/eslint-plugin-js": "^2.10.1",
     "@stylistic/eslint-plugin-ts": "^2.10.1",
     "@swc/core": "^1.5.5",
-    "@swc/jest": "^0.2.36",
     "@tsconfig/recommended": "^1.0.1",
-    "@types/jest": "^29.5.12",
     "@types/lowdb": "^1.0.15",
     "@types/node": "^22.0.0",
     "@typescript-eslint/parser": "^8.12.2",
     "discord-api-types": "^0.37.37",
     "eslint": "^9.14.0",
     "eslint-config-prettier": "github:abrahamguo/eslint-config-prettier",
-    "eslint-import-resolver-typescript": "^3.6.0",
-    "eslint-plugin-import": "^2.31.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-import-x": "^4.4.0",
     "eslint-plugin-unused-imports": "^4.0.0",
     "globals": "latest",
-    "jest": "^29.7.0",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^4.1.0",
-    "ts-jest": "^29.1.5",
-    "typescript": "^5.5.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }

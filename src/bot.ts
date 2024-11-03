@@ -17,18 +17,18 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import AudioHandler from './audio/audioHandler.ts';
-import COMMANDS from './commands.ts';
-import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway.ts';
-import handleSingleEmote from './commands/emotes/emote.ts';
-import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.ts';
-import { helpMsgOptions } from './commands/help.ts';
-import GuildDatabase from './data/db.ts';
-import EmoteConfigManager from './data/emoteConfigManager.ts';
-import { isEmoteAlias } from './data/types/emote.ts';
-import log from './logging/logging.ts';
-import { BotnekConfig } from './types/config.ts';
-import GuildResource from './types/guildResource.ts';
+import AudioHandler from './audio/audioHandler';
+import COMMANDS from './commands';
+import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway';
+import handleSingleEmote from './commands/emotes/emote';
+import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway';
+import { helpMsgOptions } from './commands/help';
+import GuildDatabase from './data/db';
+import EmoteConfigManager from './data/emoteConfigManager';
+import { isEmoteAlias } from './data/types/emote';
+import log from './logging/logging';
+import { BotnekConfig } from './types/config';
+import GuildResource from './types/guildResource';
 
 const DB_FILE: string = 'db.json';
 

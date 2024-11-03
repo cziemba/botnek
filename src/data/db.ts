@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import lodash from 'lodash';
 import { LowSync } from 'lowdb';
 import { JSONFileSync } from 'lowdb/node';
-import log from '../logging/logging.ts';
-import { DEFAULT_GUILD_DATA, GuildData } from './types.ts';
+import log from '../logging/logging';
+import { DEFAULT_GUILD_DATA, GuildData } from './types';
 
 export class LowWithLodash<T> extends LowSync<T> {
     chain: lodash.ExpChain<this['data']> = lodash.chain(this).get('data');

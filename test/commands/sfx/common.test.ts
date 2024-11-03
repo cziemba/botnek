@@ -1,11 +1,10 @@
-import { parseSfxAlias } from '../../../src/commands/sfx/common.ts';
-import { LowWithLodash } from '../../../src/data/db.js';
-import { GuildData, SfxModifier } from '../../../src/data/types.ts';
+import { describe, expect, test, vi } from 'vitest';
+import { parseSfxAlias } from '../../../src/commands/sfx/common';
+import { SfxModifier } from '../../../src/data/types';
 
 describe('common sfx', () => {
     test('parseSfxAlias', () => {
-        jest.mock('../../../src/data/db.js');
-        const mockDb = <jest.Mock<LowWithLodash<GuildData>>>LowWithLodash;
+        const mockDb = vi.fn();
         const result = parseSfxAlias(mockDb(), 'fart#turbo');
         expect(result.parsedAlias).toEqual('fart');
         expect(result.modifiers).toHaveLength(1);

@@ -1,12 +1,12 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction, Message, SharedSlashCommand } from 'discord.js';
-import { Command } from '../types/command.ts';
-import ChatGPT from './chatgpt.ts';
-import Emote from './emote.ts';
-import Play from './play.ts';
-import ServerEmoji from './serverEmoji.ts';
-import Sfx from './sfx.ts';
-import Stop from './stop.ts';
+import { Command } from '../types/command';
+import ChatGPT from './chatgpt';
+import Emote from './emote';
+import Play from './play';
+import ServerEmoji from './serverEmoji';
+import Sfx from './sfx';
+import Stop from './stop';
 
 /**
  * Exported for use in the bot news channel.

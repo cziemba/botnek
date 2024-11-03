@@ -1,31 +1,29 @@
 {
-  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "src",
     "esModuleInterop": true,
     "inlineSourceMap": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "noEmitOnError": true,
     "noImplicitAny": false,
-    "outDir": "dist",
+    "skipLibCheck": true,
     "removeComments": false,
     "resolveJsonModule": true,
-    "target": "ES2023",
-    "typeRoots": [
-      "node_modules/@types"
-    ]
+    "tsBuildInfoFile": ".tsbuildinfo"
   },
   "ts-node": {
     "experimentalSpecifierResolution": "node",
-    "transpileOnly": true,
     "esm": true
   },
   "include": [
-    "src/*.ts",
-    "src/**/*.ts",
-    "test/**/*.ts",
-    "jest.config.ts"
+    "src"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
   ]
 }

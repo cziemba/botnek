@@ -1,10 +1,10 @@
 import { ChatInputCommandInteraction, Client, Message, SharedSlashCommand } from 'discord.js';
-import AudioHandler from '../audio/audioHandler.ts';
-import BetterTTVEmoteGateway from '../commands/emotes/betterTTVEmoteGateway.ts';
-import SevenTVEmoteGateway from '../commands/emotes/sevenTVEmoteGateway.ts';
-import GuildDatabase from '../data/db.ts';
-import { BotnekConfig } from './config.ts';
-import GuildResource from './guildResource.ts';
+import AudioHandler from '../audio/audioHandler';
+import BetterTTVEmoteGateway from '../commands/emotes/betterTTVEmoteGateway';
+import SevenTVEmoteGateway from '../commands/emotes/sevenTVEmoteGateway';
+import GuildDatabase from '../data/db';
+import { BotnekConfig } from './config';
+import GuildResource from './guildResource';
 
 export interface BotShim {
     client: Client;

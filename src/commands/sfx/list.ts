@@ -1,5 +1,5 @@
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.ts';
+import { BotShim } from '../../types/command';
 
 export default async function sfxList(
     client: BotShim,

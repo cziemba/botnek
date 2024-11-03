@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Command } from '../types/command.ts';
-import { sfxAdd } from './sfx/add.ts';
-import { sfxChain } from './sfx/chain.ts';
-import { sfxDel } from './sfx/del.ts';
-import sfxHelp from './sfx/help.ts';
-import sfxList from './sfx/list.ts';
-import { sfxPlay } from './sfx/play.ts';
+import { Command } from '../types/command';
+import { sfxAdd } from './sfx/add';
+import { sfxChain } from './sfx/chain';
+import { sfxDel } from './sfx/del';
+import sfxHelp from './sfx/help';
+import sfxList from './sfx/list';
+import { sfxPlay } from './sfx/play';
 
 const Sfx: Command = {
     data: new SlashCommandBuilder()
@@ -29,6 +29,22 @@ const Sfx: Command = {
                         .setName('url')
                         .setDescription('A url to the sound effect (youtube only for now).')
                         .setRequired(true),
+                )
+                .addStringOption((startTime) =>
+                    startTime
+                        .setName('start-time')
+                        .setDescription(
+                            'Time to start the clip from (e.g. for youtube urls) [XXmYYs format]',
+                        )
+                        .setRequired(false),
+                )
+                .addStringOption((endTime) =>
+                    endTime
+                        .setName('end-time')
+                        .setDescription(
+                            'Time to end the clip at (e.g. for youtube urls) [XXmYYs format]',
+                        )
+                        .setRequired(false),
                 ),
         )
         .addSubcommand((del) =>

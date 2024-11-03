@@ -1,5 +1,5 @@
 import { Snowflake } from 'discord-api-types/globals';
-import { EmoteConfig } from './types/emote.ts';
+import { EmoteConfig } from './types/emote';
 
 /**
  * SfxAlias w/ auxiliary type union to ensure strings are not accepted in place.

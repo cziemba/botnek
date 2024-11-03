@@ -1,15 +1,18 @@
 import { CommandInteraction, Message } from 'discord.js';
 import fs from 'fs';
+import moment from 'moment';
 import path from 'path';
-import YoutubeTrack from '../../audio/tracks/youtubeTrack.ts';
-import { isValidSfxAlias } from '../../data/types.ts';
-import log from '../../logging/logging.ts';
-import { BotShim } from '../../types/command.ts';
-import { RANDOM, sfxExists } from './common.ts';
+import YoutubeTrack from '../../audio/tracks/youtubeTrack';
+import { isValidSfxAlias } from '../../data/types';
+import log from '../../logging/logging';
+import { BotShim } from '../../types/command';
+import { RANDOM, sfxExists } from './common';
 
 export interface SfxAddParams {
     alias?: string;
     url?: string;
+    startTime?: string;
+    endTime?: string;
 }
 
 export const RESERVED_ALIAS = [RANDOM];
@@ -20,7 +23,7 @@ export async function sfxAdd(
     params: SfxAddParams,
 ): Promise<void> {
     const db = client.databases.get(interaction.guildId)?.db!;
-    const { alias, url } = params;
+    const { alias, url, startTime, endTime } = params;
 
     if (!alias || !url) {
         await interaction.reply({
@@ -28,6 +31,10 @@ export async function sfxAdd(
             ephemeral: true,
         });
         return;
+    }
+
+    moment();
+    if (startTime) {
     }
 
     if (RESERVED_ALIAS.includes(alias)) {
