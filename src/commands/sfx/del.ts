@@ -1,15 +1,19 @@
-import fs from 'fs';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.ts';
+import fs from 'fs';
 import { isValidSfxAlias } from '../../data/types.ts';
 import log from '../../logging/logging.ts';
+import { BotShim } from '../../types/command.ts';
 import { sfxExists } from './common.ts';
 
 export interface SfxDelParams {
     alias?: string;
 }
 
-export async function sfxDel(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, params: SfxDelParams): Promise<void> {
+export async function sfxDel(
+    client: BotShim,
+    interaction: CommandInteraction<'cached'> | Message<true>,
+    params: SfxDelParams,
+): Promise<void> {
     const db = client.databases.get(interaction.guildId)?.db!;
     const { alias } = params;
 
@@ -23,12 +27,10 @@ export async function sfxDel(client: BotShim, interaction: CommandInteraction<'c
 
     if (!isValidSfxAlias(alias)) {
         log.warn(`Invalid alias provided ${alias}`);
-        await interaction.reply(
-            {
-                content: `\`${alias}\` is not a valid alias, only lowercase and numbers allowed.`,
-                ephemeral: true,
-            },
-        );
+        await interaction.reply({
+            content: `\`${alias}\` is not a valid alias, only lowercase and numbers allowed.`,
+            ephemeral: true,
+        });
         return;
     }
 
@@ -36,12 +38,10 @@ export async function sfxDel(client: BotShim, interaction: CommandInteraction<'c
 
     if (!sfxExists(db, alias)) {
         log.warn(`Sfx does not exist: ${alias}`);
-        await interaction.reply(
-            {
-                content: `Sfx \`${alias}\` does not exist!`,
-                ephemeral: true,
-            },
-        );
+        await interaction.reply({
+            content: `Sfx \`${alias}\` does not exist!`,
+            ephemeral: true,
+        });
         return;
     }
 

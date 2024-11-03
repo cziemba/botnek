@@ -2,8 +2,8 @@ import { CommandInteraction, Message } from 'discord.js';
 import Track from './tracks/track.ts';
 
 export interface AudioRequest {
-    interaction: CommandInteraction<'cached'> | Message<true>, // TODO: ValidatedInteraction, an interaction with non-null user, channel and guild
-    track: Track,
+    interaction: CommandInteraction<'cached'> | Message<true>; // TODO: ValidatedInteraction, an interaction with non-null user, channel and guild
+    track: Track;
 }
 
 export default class AudioQueue {

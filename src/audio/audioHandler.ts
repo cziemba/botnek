@@ -10,14 +10,12 @@ import {
 } from '@discordjs/voice';
 import { GuildMember } from 'discord.js';
 import { promisify } from 'node:util';
-import AudioQueue, { AudioRequest } from './audioQueue.ts';
 import log from '../logging/logging.ts';
+import AudioQueue, { AudioRequest } from './audioQueue.ts';
 
 const wait = promisify(setTimeout);
 
-const {
-    Connecting, Destroyed, Disconnected, Signalling, Ready,
-} = VoiceConnectionStatus;
+const { Connecting, Destroyed, Disconnected, Signalling, Ready } = VoiceConnectionStatus;
 
 const { Idle } = AudioPlayerStatus;
 
@@ -39,7 +37,10 @@ export default class AudioHandler {
         // @ts-ignore
         this.player.on('stateChange', async (oldState, newState) => {
             log.debug(`AudioPlayer State: ${oldState.status} -> ${newState.status}`);
-            if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
+            if (
+                newState.status === AudioPlayerStatus.Idle &&
+                oldState.status !== AudioPlayerStatus.Idle
+            ) {
                 await this.playNextFromQueue();
             }
         });
@@ -119,10 +120,16 @@ export default class AudioHandler {
         if (!userChannel || !userGuild) {
             throw new Error('Request expired? User is not in a channel/guild');
         }
-        log.debug(`Processing audio request for channel[${userChannel.id}] in guild[${userGuild.id}]`);
+        log.debug(
+            `Processing audio request for channel[${userChannel.id}] in guild[${userGuild.id}]`,
+        );
 
         // Join the appropriate channel if not already.
-        if (!this.connection || this.connection.state.status === Destroyed || this.connection.joinConfig.channelId !== userChannel.id) {
+        if (
+            !this.connection ||
+            this.connection.state.status === Destroyed ||
+            this.connection.joinConfig.channelId !== userChannel.id
+        ) {
             if (!this.connection || this.connection.state.status === Destroyed) {
                 log.debug('Not in a channel! Joining.');
             } else {
@@ -134,11 +141,14 @@ export default class AudioHandler {
                 guildId: userGuild.id,
                 selfDeaf: false,
                 selfMute: false,
-                adapterCreator: interaction.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator,
+                adapterCreator: interaction.guild
+                    .voiceAdapterCreator as DiscordGatewayAdapterCreator,
             });
 
             log.debug('Connection created, registering lifecycle events.');
-            this.connection.on('error', (error) => { log.error(error.message); });
+            this.connection.on('error', (error) => {
+                log.error(error.message);
+            });
 
             // @ts-ignore
             this.connection.on('stateChange', async (oldState, newState) => {
@@ -148,7 +158,10 @@ export default class AudioHandler {
                     return;
                 }
                 if (newState.status === Disconnected) {
-                    if (newState.reason === VoiceConnectionDisconnectReason.WebSocketClose && newState.closeCode === 4014) {
+                    if (
+                        newState.reason === VoiceConnectionDisconnectReason.WebSocketClose &&
+                        newState.closeCode === 4014
+                    ) {
                         try {
                             await entersState(this.connection, Connecting, 5_000);
                         } catch {
@@ -162,7 +175,10 @@ export default class AudioHandler {
                     }
                 } else if (newState.status === Destroyed) {
                     this.stop();
-                } else if (!this.readyLock && (newState.status === Connecting || newState.status === Signalling)) {
+                } else if (
+                    !this.readyLock &&
+                    (newState.status === Connecting || newState.status === Signalling)
+                ) {
                     this.readyLock = true;
                     try {
                         await entersState(this.connection, Ready, 20_000);
@@ -170,9 +186,7 @@ export default class AudioHandler {
                         const audioResource = await track.getAudioResource();
                         this.player.play(audioResource);
                     } catch (err) {
-                        log.warn(`${!err
-                            ? 'Connection did not ready within time limit!'
-                            : err}`);
+                        log.warn(`${!err ? 'Connection did not ready within time limit!' : err}`);
                         if (this.connection.state.status !== Destroyed) this.connection.destroy();
                         throw err;
                     } finally {

@@ -1,43 +1,74 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Command } from '../types/command.ts';
-import sfxHelp from './sfx/help.ts';
-import { sfxDel } from './sfx/del.ts';
 import { sfxAdd } from './sfx/add.ts';
 import { sfxChain } from './sfx/chain.ts';
-import { sfxPlay } from './sfx/play.ts';
+import { sfxDel } from './sfx/del.ts';
+import sfxHelp from './sfx/help.ts';
 import sfxList from './sfx/list.ts';
+import { sfxPlay } from './sfx/play.ts';
 
 const Sfx: Command = {
     data: new SlashCommandBuilder()
         .setName('sfx')
         .setDescription('Interact with sound effects.')
-        .addSubcommand((subCommand) => subCommand.setName('list')
-            .setDescription('List all existing sfxs.'))
-        .addSubcommand((add) => add.setName('add')
-            .setDescription('Add a sound effect.')
-            .addStringOption((name) => name.setName('alias')
-                .setDescription('The name for the sound effect.')
-                .setRequired(true))
-            .addStringOption((url) => url.setName('url')
-                .setDescription('A url to the sound effect (youtube only for now).')
-                .setRequired(true)))
-        .addSubcommand((del) => del.setName('del')
-            .setDescription('Remove a sound effect.')
-            .addStringOption((alias) => alias.setName('alias')
-                .setDescription('The alias of the sound effect to delete.')
-                .setRequired(true)))
-        .addSubcommand((subCommand) => subCommand.setName('play')
-            .setDescription('Play a sound effect in your current channel.')
-            .addStringOption((alias) => alias.setName('alias')
-                .setDescription('The name for the sound effect.')
-                .setRequired(true)))
-        .addSubcommand((subCommand) => subCommand.setName('chain')
-            .setDescription('Chain multiple sound effects together.')
-            .addStringOption((sfxs) => sfxs.setName('sfxs')
-                .setDescription('List of sound effects to play (space or comma separated). Example: `one,two` or `one two`')
-                .setRequired(true)))
-        .addSubcommand((help) => help.setName('help')
-            .setDescription('Print help for the sfx commands.')),
+        .addSubcommand((subCommand) =>
+            subCommand.setName('list').setDescription('List all existing sfxs.'),
+        )
+        .addSubcommand((add) =>
+            add
+                .setName('add')
+                .setDescription('Add a sound effect.')
+                .addStringOption((name) =>
+                    name
+                        .setName('alias')
+                        .setDescription('The name for the sound effect.')
+                        .setRequired(true),
+                )
+                .addStringOption((url) =>
+                    url
+                        .setName('url')
+                        .setDescription('A url to the sound effect (youtube only for now).')
+                        .setRequired(true),
+                ),
+        )
+        .addSubcommand((del) =>
+            del
+                .setName('del')
+                .setDescription('Remove a sound effect.')
+                .addStringOption((alias) =>
+                    alias
+                        .setName('alias')
+                        .setDescription('The alias of the sound effect to delete.')
+                        .setRequired(true),
+                ),
+        )
+        .addSubcommand((subCommand) =>
+            subCommand
+                .setName('play')
+                .setDescription('Play a sound effect in your current channel.')
+                .addStringOption((alias) =>
+                    alias
+                        .setName('alias')
+                        .setDescription('The name for the sound effect.')
+                        .setRequired(true),
+                ),
+        )
+        .addSubcommand((subCommand) =>
+            subCommand
+                .setName('chain')
+                .setDescription('Chain multiple sound effects together.')
+                .addStringOption((sfxs) =>
+                    sfxs
+                        .setName('sfxs')
+                        .setDescription(
+                            'List of sound effects to play (space or comma separated). Example: `one,two` or `one two`',
+                        )
+                        .setRequired(true),
+                ),
+        )
+        .addSubcommand((help) =>
+            help.setName('help').setDescription('Print help for the sfx commands.'),
+        ),
     helpText: 'Try `sfx help` for more info.',
     executeCommand: async (client, interaction) => {
         if (!interaction.isCommand() || !interaction.inCachedGuild()) {

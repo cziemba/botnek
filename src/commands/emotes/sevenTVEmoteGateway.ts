@@ -1,14 +1,14 @@
-import path from 'path';
 import fs from 'fs';
-import fetch from 'node-fetch';
 import mime from 'mime-types';
-import { promisify } from 'util';
+import fetch from 'node-fetch';
+import path from 'path';
 import { pipeline } from 'stream';
-import EmoteGateway from './emoteGateway.ts';
+import { promisify } from 'util';
 import { Emote, EmoteSource } from '../../data/types/emote.ts';
-import { BotnekConfig } from '../../types/config.ts';
 import log from '../../logging/logging.ts';
+import { BotnekConfig } from '../../types/config.ts';
 import { convertToGif, extractFrameDelay } from '../../utils/imagemagick.ts';
+import EmoteGateway from './emoteGateway.ts';
 
 const API_BASE = 'https://api.7tv.app/v2';
 const URL_ID_MATCHER = /http.*(7tv.app)\/emote(s)?\/(?<id>\w+).*$/;
@@ -16,10 +16,10 @@ const streamPipeline = promisify(pipeline);
 
 // Response from /emotes/{id}
 interface SevenTVEmoteData {
-    id: string,
-    name: string,
-    mime: string,
-    urls: Array<string[]>,
+    id: string;
+    name: string;
+    mime: string;
+    urls: Array<string[]>;
 }
 
 export default class SevenTVEmoteGateway extends EmoteGateway {
@@ -42,10 +42,21 @@ export default class SevenTVEmoteGateway extends EmoteGateway {
         if (fs.existsSync(gifPath)) {
             return emote;
         }
-        const dlPath = path.join(this.emoteRootPath, `${id}-tmp.${mime.extension(sevenTVEmote.mime)}`);
-        log.debug(`Caching emote https://7tv.app/emotes/${sevenTVEmote.id} -> ${dlPath} -> ${gifPath}`);
-        const emoteData = await fetch(sevenTVEmote.urls[3][1] || sevenTVEmote.urls[2][1] || sevenTVEmote[1][1] || sevenTVEmote[0][1]);
-        if (!emoteData.ok) throw new Error(`Error fetching ${emoteData.url}: ${emoteData.statusText}`);
+        const dlPath = path.join(
+            this.emoteRootPath,
+            `${id}-tmp.${mime.extension(sevenTVEmote.mime)}`,
+        );
+        log.debug(
+            `Caching emote https://7tv.app/emotes/${sevenTVEmote.id} -> ${dlPath} -> ${gifPath}`,
+        );
+        const emoteData = await fetch(
+            sevenTVEmote.urls[3][1] ||
+                sevenTVEmote.urls[2][1] ||
+                sevenTVEmote[1][1] ||
+                sevenTVEmote[0][1],
+        );
+        if (!emoteData.ok)
+            throw new Error(`Error fetching ${emoteData.url}: ${emoteData.statusText}`);
         await streamPipeline(emoteData.body!, fs.createWriteStream(dlPath));
         let delay = 0;
         try {
@@ -57,7 +68,6 @@ export default class SevenTVEmoteGateway extends EmoteGateway {
         return emote;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     public tryParseUrl(url: string): string | undefined {
         const idMatch = url.match(URL_ID_MATCHER);
         return idMatch?.groups?.id;

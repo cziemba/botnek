@@ -1,9 +1,13 @@
-import {
-    GuildData, SfxAlias, SfxModifier, isSfxModifier, isValidSfxAlias,
-} from '../../data/types.ts';
-import { LowWithLodash } from '../../data/db.ts';
-import log from '../../logging/logging.ts';
 import LocalTrack from '../../audio/tracks/localTrack.ts';
+import { LowWithLodash } from '../../data/db.ts';
+import {
+    GuildData,
+    SfxAlias,
+    SfxModifier,
+    isSfxModifier,
+    isValidSfxAlias,
+} from '../../data/types.ts';
+import log from '../../logging/logging.ts';
 import { ffmpegAdjustRate } from '../../utils/ffmpeg.ts';
 
 export const RANDOM = 'random';
@@ -14,8 +18,7 @@ export const RANDOM = 'random';
  * @param sfxModifiers
  */
 export function sfxAliasToString(sfxAlias: SfxAlias, sfxModifiers: SfxModifier[]): string {
-    const modifiersString = sfxModifiers.length === 0 ? ''
-        : `#${sfxModifiers.join('#')}`;
+    const modifiersString = sfxModifiers.length === 0 ? '' : `#${sfxModifiers.join('#')}`;
     return `\`${sfxAlias}${modifiersString}\``;
 }
 
@@ -48,7 +51,10 @@ export function normalizeAliasInput(db: LowWithLodash<GuildData>, alias: string)
 /**
  * Parse sfx alias input with modifiers e.g. 'sound#TURBO#TURBO' should parse properly into two Turbo modifiers for 'sound'.
  */
-export function parseSfxAlias(db: LowWithLodash<GuildData>, alias: string): { parsedAlias: SfxAlias, modifiers: SfxModifier[] } {
+export function parseSfxAlias(
+    db: LowWithLodash<GuildData>,
+    alias: string,
+): { parsedAlias: SfxAlias; modifiers: SfxModifier[] } {
     const aliasParts = alias.split('#');
     log.debug(`Recieved aliasParts=[${aliasParts.join(',')}]`);
     if (aliasParts.length < 1) {
@@ -64,7 +70,8 @@ export function parseSfxAlias(db: LowWithLodash<GuildData>, alias: string): { pa
     if (aliasParts.length === 1) {
         mods = [];
     } else {
-        mods = aliasParts.slice(1)
+        mods = aliasParts
+            .slice(1)
             .map((m) => isSfxModifier(m))
             .filter((m) => m !== SfxModifier.UNKNOWN)
             .slice(0, 2);
@@ -73,7 +80,12 @@ export function parseSfxAlias(db: LowWithLodash<GuildData>, alias: string): { pa
     return { parsedAlias: normalizedAlias, modifiers: mods };
 }
 
-export function handleModifiers(sfxFile: string, sfxAlias: string, modifiers: SfxModifier[], guildDir: string): LocalTrack {
+export function handleModifiers(
+    sfxFile: string,
+    sfxAlias: string,
+    modifiers: SfxModifier[],
+    guildDir: string,
+): LocalTrack {
     if (modifiers.length === 0) {
         return new LocalTrack(sfxFile, sfxAlias);
     }

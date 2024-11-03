@@ -1,5 +1,5 @@
 export interface BotnekConfig {
-    token: string,
-    dataRoot: string,
-    chatGptTokens?: string[]
+    token: string;
+    dataRoot: string;
+    chatGptTokens?: string[];
 }

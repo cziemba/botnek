@@ -1,7 +1,7 @@
-import ytdl, { MoreVideoDetails } from 'ytdl-core';
 import { AudioResource, createAudioResource } from '@discordjs/voice';
-import * as fs from 'fs';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import ytdl, { MoreVideoDetails } from 'ytdl-core';
 import Track from './track.ts';
 
 export default class YoutubeTrack extends Track {
@@ -28,8 +28,9 @@ export default class YoutubeTrack extends Track {
         const randomId = crypto.randomBytes(4).toString('hex');
         const fileName = `${this.title.toLowerCase().replaceAll(/[^a-z0-9]/g, '')}-${randomId}`;
         const audioPath = `${filePath}/${fileName}.mp3`;
-        ytdl(this.url, { filter: 'audioonly', dlChunkSize: 0 })
-            .pipe(fs.createWriteStream(audioPath));
+        ytdl(this.url, { filter: 'audioonly', dlChunkSize: 0 }).pipe(
+            fs.createWriteStream(audioPath),
+        );
         return audioPath;
     }
 

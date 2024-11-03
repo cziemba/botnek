@@ -13,7 +13,7 @@ export type Emote = {
 
 // Emote are per alias
 export type EmoteConfig = {
-    emotes: { [ alias: EmoteAlias ]: Emote };
+    emotes: { [alias: EmoteAlias]: Emote };
 };
 
 export function isEmoteAlias(alias: string): alias is EmoteAlias {

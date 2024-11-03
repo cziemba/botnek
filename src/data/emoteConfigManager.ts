@@ -1,5 +1,5 @@
-import { GuildData } from './types.ts';
 import { LowWithLodash } from './db.ts';
+import { GuildData } from './types.ts';
 import { Emote, EmoteAlias } from './types/emote.ts';
 
 const EMOTE_CONFIG = 'emoteConfig';

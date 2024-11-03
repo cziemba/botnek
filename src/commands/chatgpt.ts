@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, Message } from 'discord.js';
 import { ChatGPTAPI } from 'chatgpt';
-import { BotShim, Command } from '../types/command.ts';
+import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging.ts';
+import { BotShim, Command } from '../types/command.ts';
 
 const ONE_MINUTE_MS = 60 * 1000;
 const FIVE_MINUTES_MS = 5 * ONE_MINUTE_MS;
@@ -10,10 +10,14 @@ const FIVE_MINUTES_MS = 5 * ONE_MINUTE_MS;
 let api: ChatGPTAPI;
 let currentToken: string;
 let conversation: {
-    id?: string,
-    expiry: number,
+    id?: string;
+    expiry: number;
 };
-async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, msg: string): Promise<void> {
+async function chatGpt(
+    client: BotShim,
+    interaction: CommandInteraction<'cached'> | Message<true>,
+    msg: string,
+): Promise<void> {
     if (!api) {
         currentToken = (client.config.chatGptTokens && client.config.chatGptTokens[0]) || '';
         api = new ChatGPTAPI({
@@ -24,7 +28,7 @@ async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'
     // Initialize conversation
     if (!conversation || conversation.expiry <= Date.now()) {
         conversation = {
-            expiry: Date.now() + (5 * 60 * 1000),
+            expiry: Date.now() + 5 * 60 * 1000,
         };
     }
 
@@ -45,7 +49,7 @@ async function chatGpt(client: BotShim, interaction: CommandInteraction<'cached'
             content: `ChatGPT says: ${response.text}`,
         });
 
-        conversation.expiry = Date.now() + (FIVE_MINUTES_MS);
+        conversation.expiry = Date.now() + FIVE_MINUTES_MS;
         conversation.id = response.id;
     } catch (e) {
         await interaction.reply({
@@ -60,9 +64,9 @@ const ChatGPT: Command = {
     data: new SlashCommandBuilder()
         .setName('gpt')
         .setDescription('Talk with ChatGPT')
-        .addStringOption((text) => text.setName('text')
-            .setRequired(true)
-            .setDescription('Text to send to chat gpt')),
+        .addStringOption((text) =>
+            text.setName('text').setRequired(true).setDescription('Text to send to chat gpt'),
+        ),
     helpText: `
         Chat with https://chat.openai.com/chat
         Usage:

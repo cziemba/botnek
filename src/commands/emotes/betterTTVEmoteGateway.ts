@@ -1,13 +1,13 @@
-import path from 'path';
 import fs from 'fs';
 import fetch from 'node-fetch';
-import { promisify } from 'util';
+import path from 'path';
 import { pipeline } from 'stream';
-import EmoteGateway from './emoteGateway.ts';
+import { promisify } from 'util';
 import { Emote, EmoteSource } from '../../data/types/emote.ts';
-import { BotnekConfig } from '../../types/config.ts';
 import log from '../../logging/logging.ts';
+import { BotnekConfig } from '../../types/config.ts';
 import { convertToGif, extractFrameDelay } from '../../utils/imagemagick.ts';
+import EmoteGateway from './emoteGateway.ts';
 
 const API_BASE = 'https://api.betterttv.net/3';
 const CDN_BASE = 'https://cdn.betterttv.net';
@@ -16,9 +16,9 @@ const streamPipeline = promisify(pipeline);
 
 // Response from /emotes/{id}
 interface BetterTTVEmoteData {
-    id: string,
-    code: string,
-    imageType: string,
+    id: string;
+    code: string;
+    imageType: string;
 }
 
 export default class BetterTTVEmoteGateway extends EmoteGateway {
@@ -42,9 +42,12 @@ export default class BetterTTVEmoteGateway extends EmoteGateway {
             return emote;
         }
         const dlPath = path.join(this.emoteRootPath, `${id}-tmp.${betterTTVEmoteData.imageType}`);
-        log.debug(`Caching emote https://betterttv.com/emotes/${betterTTVEmoteData.id} -> ${dlPath} -> ${gifPath}`);
+        log.debug(
+            `Caching emote https://betterttv.com/emotes/${betterTTVEmoteData.id} -> ${dlPath} -> ${gifPath}`,
+        );
         const emoteData = await fetch(`${CDN_BASE}/emote/${id}/3x`);
-        if (!emoteData.ok) throw new Error(`Error fetching ${emoteData.url}: ${emoteData.statusText}`);
+        if (!emoteData.ok)
+            throw new Error(`Error fetching ${emoteData.url}: ${emoteData.statusText}`);
         await streamPipeline(emoteData.body!, fs.createWriteStream(dlPath));
         let delay = 0;
         try {
@@ -56,7 +59,6 @@ export default class BetterTTVEmoteGateway extends EmoteGateway {
         return emote;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     public tryParseUrl(url: string): string | undefined {
         const idMatch = url.match(URL_ID_MATCHER);
         return idMatch?.groups?.id;

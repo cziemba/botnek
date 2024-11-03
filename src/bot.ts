@@ -1,3 +1,5 @@
+import { REST } from '@discordjs/rest';
+import { Routes } from 'discord-api-types/v10';
 import {
     CacheType,
     ChannelType,
@@ -13,22 +15,20 @@ import {
     PermissionFlagsBits,
     TextChannel,
 } from 'discord.js';
-import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v10';
 import * as fs from 'fs';
 import * as path from 'path';
-import COMMANDS from './commands.ts';
 import AudioHandler from './audio/audioHandler.ts';
-import GuildResource from './types/guildResource.ts';
-import log from './logging/logging.ts';
-import GuildDatabase from './data/db.ts';
-import { BotnekConfig } from './types/config.ts';
-import handleSingleEmote from './commands/emotes/emote.ts';
-import { isEmoteAlias } from './data/types/emote.ts';
-import EmoteConfigManager from './data/emoteConfigManager.ts';
-import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.ts';
+import COMMANDS from './commands.ts';
 import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway.ts';
+import handleSingleEmote from './commands/emotes/emote.ts';
+import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway.ts';
 import { helpMsgOptions } from './commands/help.ts';
+import GuildDatabase from './data/db.ts';
+import EmoteConfigManager from './data/emoteConfigManager.ts';
+import { isEmoteAlias } from './data/types/emote.ts';
+import log from './logging/logging.ts';
+import { BotnekConfig } from './types/config.ts';
+import GuildResource from './types/guildResource.ts';
 
 const DB_FILE: string = 'db.json';
 
@@ -73,34 +73,32 @@ export default class Botnek {
             const guilds = Array.from(this.client.guilds.cache.values());
 
             if (guilds.length === 0) {
-                throw new Error('I\'m not in any guilds!, Exiting.');
+                throw new Error("I'm not in any guilds!, Exiting.");
             }
 
             const rest = new REST({ version: '10' }).setToken(config.token);
 
             // Set any bot-level commands that don't require guild info/presence.
-            await rest.put(
-                Routes.applicationCommands(clientId),
-                {
-                    body: [],
-                },
-            );
+            await rest.put(Routes.applicationCommands(clientId), {
+                body: [],
+            });
 
             // Init commands/db for each guild
-            await Promise.all(guilds.map(async (g) => {
-                log.info(`${this.client.user?.username} is running [clientId=${clientId}, guildId=${g.id}] in ${g.name}`);
+            await Promise.all(
+                guilds.map(async (g) => {
+                    log.info(
+                        `${this.client.user?.username} is running [clientId=${clientId}, guildId=${g.id}] in ${g.name}`,
+                    );
 
-                this.initGuildResources(g.id, config.dataRoot);
+                    this.initGuildResources(g.id, config.dataRoot);
 
-                await this.initHelpChannel(g);
+                    await this.initHelpChannel(g);
 
-                return rest.put(
-                    Routes.applicationGuildCommands(clientId, g.id),
-                    {
+                    return rest.put(Routes.applicationGuildCommands(clientId, g.id), {
                         body: COMMANDS.map((c) => c.data),
-                    },
-                );
-            }));
+                    });
+                }),
+            );
         });
 
         // Register the slash command handler and routing logic.
@@ -111,7 +109,10 @@ export default class Botnek {
 
             const slashCommand = COMMANDS.find((c) => c.data.name === interaction.commandName);
             if (!slashCommand || !(interaction instanceof ChatInputCommandInteraction)) {
-                await interaction.followUp({ content: 'Oops, an error occurred!', ephemeral: true });
+                await interaction.followUp({
+                    content: 'Oops, an error occurred!',
+                    ephemeral: true,
+                });
                 return;
             }
 
@@ -232,29 +233,27 @@ export default class Botnek {
             },
             {
                 id: this.client.user!.id,
-                allow: [
-                    PermissionFlagsBits.SendMessages,
-                ],
+                allow: [PermissionFlagsBits.SendMessages],
             },
         ];
 
         if (!botnekHelpChannel) {
             log.info('Creating the help channel');
-            botnekHelpChannel = await guild.channels.create(
-                {
-                    name: botnekHelpName,
-                    type: ChannelType.GuildText,
-                    topic: 'How to use botnek!',
-                    permissionOverwrites: helpChannelPermissions,
-                },
-            );
+            botnekHelpChannel = await guild.channels.create({
+                name: botnekHelpName,
+                type: ChannelType.GuildText,
+                topic: 'How to use botnek!',
+                permissionOverwrites: helpChannelPermissions,
+            });
         } else {
             log.info('Updating help channel (permissions-only)');
             await botnekHelpChannel.permissionOverwrites.set(helpChannelPermissions);
         }
 
         if (!botnekHelpChannel.isTextBased()) {
-            throw new Error(`Help channel ${botnekHelpName} exists but is corrupted. Please delete it and try again.`);
+            throw new Error(
+                `Help channel ${botnekHelpName} exists but is corrupted. Please delete it and try again.`,
+            );
         }
         const helpChannelMsgs = [...(await botnekHelpChannel.messages.fetch()).values()];
         const botMsg = helpChannelMsgs
@@ -262,9 +261,9 @@ export default class Botnek {
             .findLast((m) => m?.author.id === this.client.user?.id);
 
         // Delete all other messages in help channel.
-        await Promise.all(helpChannelMsgs
-            .filter((m) => m.id !== botMsg?.id)
-            .map((m) => m.delete()));
+        await Promise.all(
+            helpChannelMsgs.filter((m) => m.id !== botMsg?.id).map((m) => m.delete()),
+        );
 
         if (!botMsg) {
             log.info('Initializing the help text');

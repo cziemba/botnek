@@ -1,7 +1,7 @@
-import path from 'path';
+import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
-import crypto from 'crypto';
+import path from 'path';
 import { convertToGif, extractFrameDelay, getExtension } from '../../src/utils/imagemagick.ts';
 
 const WEBP_4DELAY = path.resolve(__dirname, '../tst-data/4delay.webp');

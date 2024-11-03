@@ -1,10 +1,10 @@
 import { Message, WebhookClient } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { BotShim } from '../../types/command.ts';
-import log from '../../logging/logging.ts';
-import { EMOTE_HOOK_NAME } from '../emote.ts';
 import { Emote } from '../../data/types/emote.ts';
+import log from '../../logging/logging.ts';
+import { BotShim } from '../../types/command.ts';
+import { EMOTE_HOOK_NAME } from '../emote.ts';
 import EmoteGateway from './emoteGateway.ts';
 
 /**
@@ -14,12 +14,17 @@ import EmoteGateway from './emoteGateway.ts';
  * 4. Delete user message
  * 5. Post to webhook emoji gif/jpeg (as original user?)
  */
-export default async function handleSingleEmote(client: BotShim, message: Message<true>, emote: Emote): Promise<void> {
+export default async function handleSingleEmote(
+    client: BotShim,
+    message: Message<true>,
+    emote: Emote,
+): Promise<void> {
     if (!message.inGuild() || !!message.webhookId) return;
     const db = client.databases.get(message.guildId)?.db!;
     const { channelId } = message;
 
-    const webhookConfig = db.chain.get('webhooks')
+    const webhookConfig = db.chain
+        .get('webhooks')
         .get(channelId)
         .find((w) => w.hookName === EMOTE_HOOK_NAME)
         .value();
@@ -37,7 +42,9 @@ export default async function handleSingleEmote(client: BotShim, message: Messag
     const avatar = message.author.avatarURL() || message.author.defaultAvatarURL;
     const name = message.member?.displayName;
     const parsed = message.content.trim();
-    const emoteFile = path.resolve(path.join(client.config.dataRoot, EmoteGateway.EMOTE_DIR, `${emote.id}.gif`));
+    const emoteFile = path.resolve(
+        path.join(client.config.dataRoot, EmoteGateway.EMOTE_DIR, `${emote.id}.gif`),
+    );
 
     await Promise.all([
         message.delete(),

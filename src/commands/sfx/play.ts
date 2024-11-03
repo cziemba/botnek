@@ -1,16 +1,18 @@
-import path from 'path';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.ts';
+import path from 'path';
 import log from '../../logging/logging.ts';
-import {
-    handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString,
-} from './common.ts';
+import { BotShim } from '../../types/command.ts';
+import { handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString } from './common.ts';
 
 export interface SfxPlayParams {
-    alias?: string,
+    alias?: string;
 }
 
-export async function sfxPlay(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, params: SfxPlayParams): Promise<void> {
+export async function sfxPlay(
+    client: BotShim,
+    interaction: CommandInteraction<'cached'> | Message<true>,
+    params: SfxPlayParams,
+): Promise<void> {
     const audio = client.audioHandlers.get(interaction.guildId)!;
     const db = client.databases.get(interaction.guildId)?.db!;
     const { alias } = params;
@@ -44,5 +46,8 @@ export async function sfxPlay(client: BotShim, interaction: CommandInteraction<'
         content: `Playing \`${sfxAliasToString(parsedAlias, modifiers)}\``,
     });
 
-    await audio.enqueue({ interaction, track: handleModifiers(sfxPath, parsedAlias, modifiers, guildDir) });
+    await audio.enqueue({
+        interaction,
+        track: handleModifiers(sfxPath, parsedAlias, modifiers, guildDir),
+    });
 }

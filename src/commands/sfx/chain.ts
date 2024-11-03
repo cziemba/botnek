@@ -1,23 +1,25 @@
-import path from 'path';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim } from '../../types/command.ts';
-import log from '../../logging/logging.ts';
-import {
-    handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString,
-} from './common.ts';
+import path from 'path';
 import { SfxAlias, SfxModifier } from '../../data/types.js';
+import log from '../../logging/logging.ts';
+import { BotShim } from '../../types/command.ts';
+import { handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString } from './common.ts';
 
 export interface SfxChainParams {
-    chain?: string
+    chain?: string;
 }
 
 interface ProcessedSfx {
-    parsedAlias: SfxAlias,
-    modifiers: SfxModifier[],
-    path?: string,
+    parsedAlias: SfxAlias;
+    modifiers: SfxModifier[];
+    path?: string;
 }
 
-export async function sfxChain(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, params: SfxChainParams) {
+export async function sfxChain(
+    client: BotShim,
+    interaction: CommandInteraction<'cached'> | Message<true>,
+    params: SfxChainParams,
+) {
     const audio = client.audioHandlers.get(interaction.guildId)!;
     const db = client.databases.get(interaction.guildId)?.db!;
 
@@ -29,12 +31,16 @@ export async function sfxChain(client: BotShim, interaction: CommandInteraction<
         return;
     }
 
-    const processedSfx = params.chain.split(/[ ,]+/)
+    const processedSfx = params.chain
+        .split(/[ ,]+/)
         .map((s) => parseSfxAlias(db, s))
-        .map((sfx) => ({
-            ...sfx,
-            path: loadSfxPath(db, sfx.parsedAlias),
-        } as ProcessedSfx));
+        .map(
+            (sfx) =>
+                ({
+                    ...sfx,
+                    path: loadSfxPath(db, sfx.parsedAlias),
+                }) as ProcessedSfx,
+        );
 
     if (processedSfx.length > 5) {
         await interaction.reply({
@@ -68,7 +74,9 @@ export async function sfxChain(client: BotShim, interaction: CommandInteraction<
         const alias = sfx.parsedAlias;
         const mods = sfx.modifiers;
         const sfxPath = sfx.path!;
-        enqueuePromises.push(audio.enqueue({ interaction, track: handleModifiers(sfxPath, alias, mods, guildDir) }));
+        enqueuePromises.push(
+            audio.enqueue({ interaction, track: handleModifiers(sfxPath, alias, mods, guildDir) }),
+        );
     });
     await Promise.all(enqueuePromises);
     await interaction.reply({

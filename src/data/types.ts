@@ -42,17 +42,17 @@ export function isSfxModifier(modifier: string): SfxModifier {
  * Sound effects: key/value pairs of alias to sound file
  */
 export type SfxConfig = {
-    sounds: { [ key: SfxAlias ]: string };
+    sounds: { [key: SfxAlias]: string };
 };
 
 /**
  * Webhooks: registered webhooks are identified by channel id
  */
 export type WebhookConfig = {
-    [ channel: Snowflake ]: {
-        hookName: string,
-        id: Snowflake,
-        token: string,
+    [channel: Snowflake]: {
+        hookName: string;
+        id: Snowflake;
+        token: string;
     }[];
 };
 

@@ -1,16 +1,16 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
-import path from 'path';
 import os from 'os';
-import { BotShim, Command } from '../types/command.ts';
-import EmoteGateway from './emotes/emoteGateway.ts';
-import { convertToGif, extractFrameDelay } from '../utils/imagemagick.ts';
+import path from 'path';
 import log from '../logging/logging.js';
+import { BotShim, Command } from '../types/command.ts';
+import { convertToGif, extractFrameDelay } from '../utils/imagemagick.ts';
+import EmoteGateway from './emotes/emoteGateway.ts';
 
 async function addEmoji(
     client: BotShim,
     interaction: CommandInteraction<'cached'> | Message<true>,
-    props: { url: string, alias?: string },
+    props: { url: string; alias?: string },
 ): Promise<void> {
     const emotePath = path.resolve(path.join(client.config.dataRoot, EmoteGateway.EMOTE_DIR));
     const emojiManager = interaction.guild.emojis;
@@ -61,13 +61,24 @@ const ServerEmoji: Command = {
     data: new SlashCommandBuilder()
         .setName('emoji')
         .setDescription('Control server emojis')
-        .addSubcommand((add) => add.setName('add')
-            .setDescription('Add emote, see https://7tv.app/ and https://betterttv.com/')
-            .addStringOption((url) => url.setName('url')
-                .setRequired(true)
-                .setDescription('Link to the emote (7tv or betterttv)'))
-            .addStringOption((alias) => alias.setName('alias')
-                .setDescription('The alias for the emote (optional, will use default name otherwise)'))),
+        .addSubcommand((add) =>
+            add
+                .setName('add')
+                .setDescription('Add emote, see https://7tv.app/ and https://betterttv.com/')
+                .addStringOption((url) =>
+                    url
+                        .setName('url')
+                        .setRequired(true)
+                        .setDescription('Link to the emote (7tv or betterttv)'),
+                )
+                .addStringOption((alias) =>
+                    alias
+                        .setName('alias')
+                        .setDescription(
+                            'The alias for the emote (optional, will use default name otherwise)',
+                        ),
+                ),
+        ),
     helpText: `
         Interact with discord-managed emojis. Can add static/animated emojis from BTTV and 7TV.
         Usage:

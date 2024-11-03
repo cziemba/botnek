@@ -1,14 +1,18 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
-import { BotShim, Command } from '../types/command.ts';
 import YoutubeTrack from '../audio/tracks/youtubeTrack.ts';
 import log from '../logging/logging.ts';
+import { BotShim, Command } from '../types/command.ts';
 
 export interface PlayClipParams {
     url?: string;
 }
 
-export async function playClip(client: BotShim, interaction: CommandInteraction<'cached'> | Message<true>, params: PlayClipParams): Promise<void> {
+export async function playClip(
+    client: BotShim,
+    interaction: CommandInteraction<'cached'> | Message<true>,
+    params: PlayClipParams,
+): Promise<void> {
     const { url } = params;
 
     if (!url) {
@@ -37,13 +41,15 @@ export async function playClip(client: BotShim, interaction: CommandInteraction<
         return;
     }
 
-    log.debug(`Valid play request from channel[${interaction.member.voice.channel?.id}] in guild[${interaction.member.voice.guild.id}]`);
+    log.debug(
+        `Valid play request from channel[${interaction.member.voice.channel?.id}] in guild[${interaction.member.voice.guild.id}]`,
+    );
 
     const audioHandler = client.audioHandlers.get(interaction.guildId);
     if (!audioHandler) {
         log.error(`Audio handler was never initialized for guild[${interaction.guildId}`);
         await interaction.reply({
-            content: 'I\'m sorry, something went wrong',
+            content: "I'm sorry, something went wrong",
             ephemeral: true,
         });
         return;
@@ -61,9 +67,9 @@ const Play: Command = {
     data: new SlashCommandBuilder()
         .setName('play')
         .setDescription('Play a youtube clip in your current channel.')
-        .addStringOption((option) => option.setName('url')
-            .setDescription('The url')
-            .setRequired(true)),
+        .addStringOption((option) =>
+            option.setName('url').setDescription('The url').setRequired(true),
+        ),
     helpText: `
         Usage:
             \`play <url>\`

@@ -12,7 +12,7 @@
     "outDir": "dist",
     "removeComments": false,
     "resolveJsonModule": true,
-    "target": "ESNext",
+    "target": "ES2023",
     "typeRoots": [
       "node_modules/@types"
     ]
@@ -23,6 +23,7 @@
     "esm": true
   },
   "include": [
+    "src/*.ts",
     "src/**/*.ts",
     "test/**/*.ts",
     "jest.config.ts"

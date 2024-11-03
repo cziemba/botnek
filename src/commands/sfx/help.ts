@@ -1,7 +1,10 @@
 import { ChatInputCommandInteraction, Message } from 'discord.js';
 import { BotShim } from '../../types/command.ts';
 
-export default async function sfxHelp(client: BotShim, interaction: ChatInputCommandInteraction<'cached'> | Message<true>) {
+export default async function sfxHelp(
+    client: BotShim,
+    interaction: ChatInputCommandInteraction<'cached'> | Message<true>,
+) {
     const aliasHelp = {
         name: 'Aliases',
         value: 'Existing sfxs can be found using the `sfx list` command.',
@@ -29,11 +32,13 @@ export default async function sfxHelp(client: BotShim, interaction: ChatInputCom
         ].join('\n'),
     };
     await interaction.reply({
-        embeds: [{
-            color: 0x0F0F0F,
-            title: '`SFX` Commands Overview',
-            timestamp: new Date().toISOString(),
-            fields: [generalCommands, aliasHelp, modifierHelp],
-        }],
+        embeds: [
+            {
+                color: 0x0f0f0f,
+                title: '`SFX` Commands Overview',
+                timestamp: new Date().toISOString(),
+                fields: [generalCommands, aliasHelp, modifierHelp],
+            },
+        ],
     });
 }

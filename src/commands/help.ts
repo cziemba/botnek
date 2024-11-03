@@ -1,12 +1,12 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction, Message, SharedSlashCommand } from 'discord.js';
 import { Command } from '../types/command.ts';
-import Play from './play.ts';
-import Stop from './stop.ts';
-import Sfx from './sfx.ts';
-import ServerEmoji from './serverEmoji.ts';
-import Emote from './emote.ts';
 import ChatGPT from './chatgpt.ts';
+import Emote from './emote.ts';
+import Play from './play.ts';
+import ServerEmoji from './serverEmoji.ts';
+import Sfx from './sfx.ts';
+import Stop from './stop.ts';
 
 /**
  * Exported for use in the bot news channel.
@@ -21,12 +21,14 @@ export const helpMsgOptions = () => {
 
     const cmdFields = cmds.map((cmd) => cmdToMd(cmd.data, cmd.helpText));
     return {
-        embeds: [{
-            color: 0x0F0F0F,
-            title: 'Botnek Commands Overview',
-            timestamp: new Date().toISOString(),
-            fields: cmdFields,
-        }],
+        embeds: [
+            {
+                color: 0x0f0f0f,
+                title: 'Botnek Commands Overview',
+                timestamp: new Date().toISOString(),
+                fields: cmdFields,
+            },
+        ],
         ephemeral: true,
     };
 };
@@ -36,9 +38,7 @@ const botHelp = async (interaction: ChatInputCommandInteraction<'cached'> | Mess
 };
 
 export const Help: Command = {
-    data: new SlashCommandBuilder()
-        .setName('help')
-        .setDescription('Get help with commands'),
+    data: new SlashCommandBuilder().setName('help').setDescription('Get help with commands'),
     executeCommand: async (_client, interaction) => {
         await botHelp(interaction);
     },

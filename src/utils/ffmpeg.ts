@@ -1,7 +1,7 @@
-import fs from 'fs';
 import { execSync } from 'child_process';
-import path from 'path';
 import * as crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import log from '../logging/logging.ts';
 
 /**
@@ -18,7 +18,11 @@ const ffmpegProcessAudio = (inFile: string, guildDir: string, audioFilters: stri
     if (!fs.existsSync(ffmpegWorkDir)) fs.mkdirSync(ffmpegWorkDir);
 
     const inFilename = path.basename(inFile, path.extname(inFile));
-    const filenameDigest = crypto.createHash('md5').update(inFilename).update(audioFilters).digest('hex');
+    const filenameDigest = crypto
+        .createHash('md5')
+        .update(inFilename)
+        .update(audioFilters)
+        .digest('hex');
     const outFilename = `${filenameDigest}${path.extname(inFile)}`;
     const outPath = path.join(ffmpegWorkDir, outFilename);
 
@@ -47,7 +51,9 @@ export const ffmpegAdjustRate = (inFile: string, guildDir: string, rate: number)
  */
 export const ffmpegDurationSeconds = (inFile: string): string => {
     try {
-        const durationSeconds = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${inFile}`);
+        const durationSeconds = execSync(
+            `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${inFile}`,
+        );
         return durationSeconds.toString();
     } catch (e) {
         log.error(e);

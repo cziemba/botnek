@@ -1,5 +1,5 @@
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { Emote } from '../../data/types/emote.ts';
 import { BotnekConfig } from '../../types/config.ts';
 
@@ -26,6 +26,7 @@ export default abstract class EmoteGateway {
 
     protected constructor(botnekConfig: BotnekConfig) {
         this.emoteRootPath = path.resolve(path.join(botnekConfig.dataRoot, EmoteGateway.EMOTE_DIR));
-        if (!fs.existsSync(this.emoteRootPath)) fs.mkdirSync(this.emoteRootPath, { recursive: true });
+        if (!fs.existsSync(this.emoteRootPath))
+            fs.mkdirSync(this.emoteRootPath, { recursive: true });
     }
 }
