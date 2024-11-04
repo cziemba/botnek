@@ -1,3 +1,4 @@
+/* eslint-disable import-x/no-named-as-default-member */
 import { CommandInteraction, Message } from 'discord.js';
 import fs from 'fs';
 import moment from 'moment';
@@ -15,7 +16,20 @@ export interface SfxAddParams {
     endTime?: string;
 }
 
+export const momentParse = (time: string) => {
+    if (time.includes(':')) {
+        return moment.duration(time);
+    } else if (time.includes('s')) {
+        return moment.duration('PT' + time.toUpperCase());
+    } else {
+        // assume seconds
+        return moment.duration('PT' + time.toString() + 'S');
+    }
+};
+
 export const RESERVED_ALIAS = [RANDOM];
+
+const MAX_SFX_LENGTH_SECONDS = 30;
 
 export async function sfxAdd(
     client: BotShim,
@@ -25,6 +39,8 @@ export async function sfxAdd(
     const db = client.databases.get(interaction.guildId)?.db!;
     const { alias, url, startTime, endTime } = params;
 
+    log.info(JSON.stringify(params));
+
     if (!alias || !url) {
         await interaction.reply({
             content: 'Invalid input, please provide an alias and url',
@@ -33,8 +49,26 @@ export async function sfxAdd(
         return;
     }
 
-    moment();
+    let startFromSeconds: number | undefined = undefined;
     if (startTime) {
+        const startFrom = momentParse(startTime);
+        startFromSeconds = startFrom.asSeconds();
+        log.info(`startTime=${startTime} startFromSeconds=${startFromSeconds}`);
+    }
+
+    let endAtSeconds: number | undefined = undefined;
+    if (endTime) {
+        const endAt = momentParse(endTime);
+        endAtSeconds = endAt.asSeconds();
+        log.info(`endTime=${endTime} endAtSeconds=${endAtSeconds}`);
+    }
+
+    if (startFromSeconds && endAtSeconds && startFromSeconds > endAtSeconds) {
+        await interaction.reply({
+            content: 'startTime cannot be after endTime.',
+            ephemeral: true,
+        });
+        return;
     }
 
     if (RESERVED_ALIAS.includes(alias)) {
@@ -87,11 +121,26 @@ export async function sfxAdd(
 
     await YoutubeTrack.fromUrl(url)
         .then((track) => {
-            if (parseInt(track.videoDetails.lengthSeconds, 10) > 30)
-                throw new Error(`${url} clip is too long, must be < 30s.`);
+            const videoLengthSeconds = parseInt(track.videoDetails.lengthSeconds, 10);
+            if (startFromSeconds) {
+                if (videoLengthSeconds - startFromSeconds > MAX_SFX_LENGTH_SECONDS) {
+                    if (!endAtSeconds || endAtSeconds - startFromSeconds > MAX_SFX_LENGTH_SECONDS) {
+                        throw new Error(
+                            `Too long: [${url}] would be > ${MAX_SFX_LENGTH_SECONDS} seconds.`,
+                        );
+                    }
+                    if (videoLengthSeconds < endAtSeconds - startFromSeconds) {
+                        throw new Error(
+                            `Duration ${endAtSeconds - startFromSeconds} greater than video length ${videoLengthSeconds}`,
+                        );
+                    }
+                }
+            } else if (videoLengthSeconds > MAX_SFX_LENGTH_SECONDS) {
+                throw new Error(`Too long: [${url}] would be > ${MAX_SFX_LENGTH_SECONDS} seconds.`);
+            }
             return track;
         })
-        .then((track) => track.saveAudio(soundsPath))
+        .then((track) => track.saveAudio(soundsPath, startFromSeconds, endAtSeconds))
         .then((filePath) => {
             soundsDb.set(alias, filePath).value();
             db.write();

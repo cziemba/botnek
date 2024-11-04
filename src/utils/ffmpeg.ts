@@ -60,3 +60,19 @@ export const ffmpegDurationSeconds = (inFile: string): string => {
         throw e;
     }
 };
+
+export const ffmpegTrimAudio = (inFile: string, outFile: string, start?: number, end?: number) => {
+    try {
+        const args: string[] = [];
+        if (start) {
+            args.push(`-ss ${start}`); // seek to start
+        }
+        if (end) {
+            args.push(`-to ${end}`); // until end
+        }
+        execSync(`ffmpeg ${args.join(' ')} -i ${inFile} ${outFile}`);
+    } catch (e) {
+        log.error(e);
+        throw e;
+    }
+};

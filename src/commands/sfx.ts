@@ -103,7 +103,9 @@ const Sfx: Command = {
         } else if (subCommand === 'add') {
             const url = interaction.options.getString('url', true);
             const alias = interaction.options.getString('alias', true);
-            await sfxAdd(client, interaction, { alias, url });
+            const startTime = interaction.options.getString('start-time', false) || undefined;
+            const endTime = interaction.options.getString('end-time', false) || undefined;
+            await sfxAdd(client, interaction, { alias, url, startTime, endTime });
         } else if (subCommand === 'del') {
             const alias = interaction.options.getString('alias', true);
             await sfxDel(client, interaction, { alias });
@@ -120,7 +122,12 @@ const Sfx: Command = {
                 await sfxDel(client, message, { alias: args[1] });
                 return;
             case 'add':
-                await sfxAdd(client, message, { alias: args[1], url: args[2] });
+                await sfxAdd(client, message, {
+                    alias: args[1],
+                    url: args[2],
+                    startTime: (args.length > 2 && args[3]) || undefined,
+                    endTime: (args.length > 3 && args[4]) || undefined,
+                });
                 return;
             case 'chain':
                 await sfxChain(client, message, { chain: args.slice(1).join(' ') });

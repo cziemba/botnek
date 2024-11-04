@@ -8,6 +8,7 @@
     "rootDir": "src",
     "esModuleInterop": true,
     "inlineSourceMap": true,
+    "noEmit": true,
     "noEmitOnError": true,
     "noImplicitAny": false,
     "skipLibCheck": true,
@@ -17,6 +18,7 @@
   },
   "ts-node": {
     "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
     "esm": true
   },
   "include": [

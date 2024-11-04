@@ -1,10 +1,10 @@
 import { generateDependencyReport } from '@discordjs/voice';
 import Botnek from './bot';
-import * as Config from './config.json' with { type: 'json' };
+import configJson from './config.json' with { type: 'json' };
 import log from './logging/logging';
 
 log.info(generateDependencyReport());
 
-const botnek = new Botnek(Config);
+const botnek = new Botnek(configJson);
 
-await botnek.login(Config.token);
+await botnek.login(configJson.token);

@@ -27,7 +27,7 @@ export default async function sfxHelp(
             'Play a sound effect: `sfx play <alias>`',
             'Chain sound effects: `sfx chain <alias1>, <alias2>, etc...`',
             'List available sounds: `sfx list`',
-            'Add a sound effect: `sfx add <alias> <youtube-url>`',
+            'Add a sound effect: `sfx add <alias> <youtube-url> [start-time] [end-time]`',
             'Remove a sound effect: `sfx del <alias>`',
         ].join('\n'),
     };
