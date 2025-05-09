@@ -46,6 +46,20 @@ export const ffmpegAdjustRate = (inFile: string, guildDir: string, rate: number)
     return ffmpegProcessAudio(inFile, guildDir, `asetrate=44100*${rate}, aresample=44100`);
 };
 
+export const ffmpegBassBoost = (
+    inFile: string,
+    guildDir: string,
+    firstDb: number,
+    secondDb: number,
+): string => {
+    log.debug(`FFMPEG Bass Boost firstDb=${firstDb} secondDb=${secondDb}`);
+    return ffmpegProcessAudio(
+        inFile,
+        guildDir,
+        `firequalizer=gain_entry='entry(0,${firstDb});entry(450,${secondDb});entry(1000,0)', aresample=44100`,
+    );
+};
+
 /**
  * Get audio file duration in seconds
  */

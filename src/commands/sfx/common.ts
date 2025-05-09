@@ -1,8 +1,8 @@
 import LocalTrack from '../../audio/tracks/localTrack';
 import { LowWithLodash } from '../../data/db';
-import { GuildData, SfxAlias, SfxModifier, isSfxModifier, isValidSfxAlias } from '../../data/types';
+import { GuildData, isSfxModifier, isValidSfxAlias, SfxAlias, SfxModifier } from '../../data/types';
 import log from '../../logging/logging';
-import { ffmpegAdjustRate } from '../../utils/ffmpeg';
+import { ffmpegAdjustRate, ffmpegBassBoost } from '../../utils/ffmpeg';
 
 export const RANDOM = 'random';
 
@@ -100,6 +100,14 @@ export function handleModifiers(
             }
             case SfxModifier.SLOW2: {
                 finalPath = ffmpegAdjustRate(finalPath, guildDir, 1 / 2);
+                break;
+            }
+            case SfxModifier.BASS: {
+                finalPath = ffmpegBassBoost(finalPath, guildDir, 50, 20);
+                break;
+            }
+            case SfxModifier.BASS2: {
+                finalPath = ffmpegBassBoost(finalPath, guildDir, 80, 40);
                 break;
             }
             default: {

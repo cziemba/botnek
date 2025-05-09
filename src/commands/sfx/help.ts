@@ -18,6 +18,8 @@ export default async function sfxHelp(
             '- TURBO2: 100% faster (ex: `sfx yay#turbo2`)',
             '- SLOW: 33% slower (ex: `sfx yay#slow`)',
             '- SLOW2: 100% slower (ex: `sfx yay#slow2`)',
+            '- BASS: bass boost (ex: `sfx yay#bass`)',
+            '- BASS2: more bass boost (ex: `sfx yay#bass2`)',
         ].join('\n'),
     };
     const generalCommands = {

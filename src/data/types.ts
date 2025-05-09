@@ -24,6 +24,8 @@ export enum SfxModifier {
     'TURBO2' = 'TURBO2',
     'SLOW' = 'SLOW',
     'SLOW2' = 'SLOW2',
+    'BASS' = 'BASS',
+    'BASS2' = 'BASS2',
 }
 
 /**
