@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
-import { parseSfxAlias } from '../../../src/commands/sfx/common';
-import { SfxModifier } from '../../../src/data/types';
+import { SfxModifier } from '../../data/types';
+import { parseSfxAlias } from './common';
 
 describe('common sfx', () => {
     test('parseSfxAlias', () => {

@@ -3,9 +3,9 @@ import fetch from 'node-fetch';
 import { createWriteStream } from 'node:fs';
 import { PassThrough, Readable } from 'node:stream';
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import BetterTTVEmoteGateway from '../../../src/commands/emotes/betterTTVEmoteGateway';
-import { EmoteSource } from '../../../src/data/types/emote';
-import { BotnekConfig } from '../../../src/types/config';
+import { EmoteSource } from '../../data/types/emote';
+import { BotnekConfig } from '../../types/config';
+import BetterTTVEmoteGateway from './betterTTVEmoteGateway';
 
 vi.mock('fs');
 

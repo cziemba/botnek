@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isSfxModifier, SfxModifier } from '../../src/data/types';
+import { isSfxModifier, SfxModifier } from './types';
 
 describe('types', () => {
     test('isSfxModifier', () => {

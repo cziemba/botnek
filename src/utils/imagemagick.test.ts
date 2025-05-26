@@ -3,10 +3,10 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { describe, expect, test } from 'vitest';
-import { convertToGif, extractFrameDelay, getExtension } from '../../src/utils/imagemagick';
+import { convertToGif, extractFrameDelay, getExtension } from './imagemagick';
 
-const WEBP_4DELAY = path.resolve(__dirname, '../tst-data/4delay.webp');
-const WEBP_PNG = path.resolve(__dirname, '../tst-data/static.webp');
+const WEBP_4DELAY = path.resolve(__dirname, '../../test-data/gif-processing/4delay.webp');
+const WEBP_PNG = path.resolve(__dirname, '../../test-data/gif-processing/static.webp');
 const TMPFILE = (ext: string) => path.resolve(os.tmpdir(), `${crypto.randomUUID()}.${ext}`);
 
 describe('imagemagick', () => {
