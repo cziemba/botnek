@@ -15,4 +15,8 @@ export default class GuildResource<T> {
     public put(guildId: Snowflake, resource: T): void {
         this.map.set(guildId, resource);
     }
+
+    public has(guildId: Snowflake): boolean {
+        return this.map.has(guildId);
+    }
 }

@@ -64,7 +64,7 @@ export default class Botnek {
             ],
         });
 
-        this.client.once('ready', async () => {
+        this.client.once('clientReady', async () => {
             if (!this.client.user || !this.client.application) {
                 return;
             }
@@ -282,6 +282,11 @@ export default class Botnek {
      * @returns {Promise<void>} - A Promise that resolves when the guild resources are initialized.
      */
     private initGuildResources(guildId: string, dataRoot: string) {
+        // Exit early if resources are already initialized
+        if (this.audioHandlers.has(guildId) && this.databases.has(guildId)) {
+            return;
+        }
+
         const guildDbPath = path.resolve(`${dataRoot}/${guildId}`);
         fs.mkdirSync(guildDbPath, { recursive: true });
 
