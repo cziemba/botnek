@@ -27,7 +27,7 @@ npm run redeploy          # pm2 restart botnek2 (production)
 
 Runtime system deps (not via npm): `ffmpeg`, `ffprobe`, ImageMagick `convert` / `identify`, `file`. All are shelled out via `execSync` / `exec`.
 
-Config is loaded at runtime from `$BOTNEK_CONFIG` (default `~/.botnek2/config.json`), shape in `src/types/config.ts`: `{ token, dataRoot, anthropicApiKey?, logLevel? }`. `dataRoot` is where all persistent guild state and cached audio/emote files live. The Docker image sets `BOTNEK_CONFIG=/config/config.json` and operators bind-mount the file in.
+Config is loaded at runtime from `$BOTNEK_CONFIG` (default `~/.botnek2/config.json`), JSON shape in `src/types/config.ts` (`BotnekConfigJson`): `{ token, anthropicApiKey?, logLevel? }`. The data root (where per-guild lowdb + audio/emote caches live) is resolved separately from `$BOTNEK_DATA_ROOT` (default `~/.botnek2/data`); deliberately not in the JSON so users can't desync the config field from the actual mount path. The Docker image sets `BOTNEK_CONFIG=/config/config.json` and `BOTNEK_DATA_ROOT=/data`; operators bind-mount the config file and data dir.
 
 ## Architecture at a glance
 

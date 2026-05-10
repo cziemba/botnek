@@ -2,9 +2,11 @@ import { generateDependencyReport } from '@discordjs/voice';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { BotnekConfig } from './types/config';
+import { BotnekConfig, BotnekConfigJson } from './types/config';
 
 const DEFAULT_CONFIG_PATH = path.join(os.homedir(), '.botnek2', 'config.json');
+const DEFAULT_DATA_ROOT = path.join(os.homedir(), '.botnek2', 'data');
+
 const configPath = process.env.BOTNEK_CONFIG ?? DEFAULT_CONFIG_PATH;
 
 if (!fs.existsSync(configPath)) {
@@ -13,7 +15,11 @@ if (!fs.existsSync(configPath)) {
     process.exit(1);
 }
 
-const configJson = JSON.parse(fs.readFileSync(configPath, 'utf8')) as BotnekConfig;
+const configFromFile = JSON.parse(fs.readFileSync(configPath, 'utf8')) as BotnekConfigJson;
+const configJson: BotnekConfig = {
+    ...configFromFile,
+    dataRoot: process.env.BOTNEK_DATA_ROOT ?? DEFAULT_DATA_ROOT,
+};
 
 // Set env var BEFORE importing the logger so the singleton picks it up at construction.
 if (configJson.logLevel) {

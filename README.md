@@ -48,22 +48,22 @@ Configuration lives at `~/.botnek2/config.json` by default. Override with the `B
 | field             | type                  | required | description                                                                                       |
 | ----------------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------- |
 | `token`           | `string`              | yes      | Discord bot token.                                                                                |
-| `dataRoot`        | `string`              | yes      | Filesystem path used for all persistent guild state and cached audio/emote files.                 |
 | `anthropicApiKey` | `string`              | no       | Anthropic API key for the `/claude` command. Omit to disable.                                     |
 | `logLevel`        | `pino.LevelWithSilent` | no       | Pino log level (`trace` \| `debug` \| `info` \| `warn` \| `error` \| `fatal` \| `silent`). Defaults to `trace`. Override at runtime with the `LOG_LEVEL` env var. |
 
-Example for the Docker install above (`dataRoot` is the in-container path):
+Example:
 
 ```json
 {
     "token": "YOUR_DISCORD_BOT_TOKEN",
-    "dataRoot": "/data",
     "anthropicApiKey": "sk-ant-...",
     "logLevel": "info"
 }
 ```
 
-`dataRoot` must be writable. Commands are guild-scoped, not global — adding the bot to a new guild requires a process restart so its commands get published there.
+The data directory (per-guild lowdb files, audio + emote caches) defaults to `~/.botnek2/data` for native runs and `/data` inside the Docker image (set by `BOTNEK_DATA_ROOT`). Override with the `BOTNEK_DATA_ROOT` env var if you want it elsewhere — e.g. on a separate disk.
+
+Commands are guild-scoped, not global — adding the bot to a new guild requires a process restart so its commands get published there.
 
 ## Run from source (development)
 
@@ -77,10 +77,8 @@ Requires Node ≥22 and the following binaries on `$PATH` (shelled out, not pull
 ```sh
 npm install
 npm test            # vitest run; *.integration.test.ts hits the network (YouTube)
-npm start           # ts-node + pino-pretty
+npm start           # ts-node + pino-pretty; data → ~/.botnek2/data
 ```
-
-For native runs, set `"dataRoot": "/home/you/.botnek2/data"` (or any host path) in your `~/.botnek2/config.json` — the in-container `/data` only resolves inside the image.
 
 Other useful scripts:
 

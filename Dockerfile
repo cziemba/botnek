@@ -40,7 +40,8 @@ RUN useradd --system --create-home --uid 1001 botnek \
 USER botnek
 
 ENV NODE_ENV=production \
-    BOTNEK_CONFIG=/config/config.json
+    BOTNEK_CONFIG=/config/config.json \
+    BOTNEK_DATA_ROOT=/data
 VOLUME ["/data", "/config"]
 
 ENTRYPOINT ["node", "--loader", "ts-node/esm", "src/index.ts"]
