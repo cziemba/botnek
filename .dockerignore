@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.idea
+node_modules
+dist
+.tsbuildinfo
+test-data
+**/*.test.ts
+**/*.integration.test.ts
+src/config.json
+docs
+README.md
+*.md
+.env*
+pm2.config.js

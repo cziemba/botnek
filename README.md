@@ -1,15 +1,8 @@
 # botnek2
 
+[![CI](https://github.com/cziemba/botnek/actions/workflows/ci.yml/badge.svg?branch=mainline)](https://github.com/cziemba/botnek/actions/workflows/ci.yml)
+
 A single-process Node Discord bot (ESM, TypeScript, Node ≥22) built on `discord.js` v14 and `@discordjs/voice`. Provides per-guild sound effects, YouTube playback, 7TV/BTTV emote rendering through channel webhooks, and a Claude (`@anthropic-ai/sdk`) chat passthrough. Commands are exposed both as Discord slash commands and `!`-prefix message commands.
-
-## Runtime dependencies
-
-The following binaries must be on `$PATH` (they are shelled out, not pulled via npm):
-
-- `ffmpeg`
-- `ffprobe`
-- ImageMagick — `convert` and `identify`
-- `file`
 
 ## Configuration
 
@@ -27,17 +20,48 @@ Example:
 ```json
 {
     "token": "YOUR_DISCORD_BOT_TOKEN",
-    "dataRoot": "/var/lib/botnek2",
+    "dataRoot": "/data",
     "anthropicApiKey": "sk-ant-...",
     "logLevel": "info"
 }
 ```
 
-`dataRoot` must be writable — the bot creates per-guild subdirectories aggressively (audio cache, emote cache, lowdb files).
+`dataRoot` must be writable — the bot creates per-guild subdirectories aggressively (audio cache, emote cache, lowdb files). Commands are guild-scoped, not global, so adding the bot to a new guild requires a process restart so its commands get published there.
 
-Commands are guild-scoped, not global. Adding the bot to a new guild requires a process restart so its commands get published there.
+## Run with Docker (recommended)
 
-## Quickstart
+A pre-built image is published to GHCR on every `v*` tag and bakes in `ffmpeg`, ImageMagick, and `file` — no host install needed.
+
+```sh
+docker pull ghcr.io/cziemba/botnek:latest
+```
+
+Minimal compose setup (see [`docker-compose.yml`](docker-compose.yml)):
+
+```yaml
+services:
+  botnek:
+    image: ghcr.io/cziemba/botnek:latest
+    restart: unless-stopped
+    volumes:
+      - ./config.json:/app/src/config.json:ro
+      - ./data:/data
+```
+
+With `"dataRoot": "/data"` in your `config.json`, all persistent state lands on the mounted volume.
+
+```sh
+docker compose up -d
+```
+
+## Run from source (development)
+
+Requires Node ≥22 and the following binaries on `$PATH` (shelled out, not pulled via npm):
+
+- `ffmpeg`
+- `ffprobe`
+- ImageMagick — `convert` and `identify`
+- `file`
 
 ```sh
 npm install
@@ -53,6 +77,17 @@ npm run lint[:fix]
 npm run prettier[:fix]
 npm run redeploy           # pm2 restart botnek2 (production)
 ```
+
+## Releasing
+
+Bump `version` in `package.json`, tag, push:
+
+```sh
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+The release workflow builds the image and publishes `ghcr.io/cziemba/botnek:1.2.3`, `:1.2`, and `:latest`.
 
 ## Documentation
 
