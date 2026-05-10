@@ -45,7 +45,14 @@ const staticFixture: SevenTVEmoteData = {
         url: '//cdn.7tv.app/emote/01F6MXJD8R000F76KNAAV5HDGD',
         files: [
             { name: '1x.webp', width: 32, height: 32, frame_count: 1, size: 938, format: 'WEBP' },
-            { name: '4x.webp', width: 128, height: 128, frame_count: 1, size: 4476, format: 'WEBP' },
+            {
+                name: '4x.webp',
+                width: 128,
+                height: 128,
+                frame_count: 1,
+                size: 4476,
+                format: 'WEBP',
+            },
             { name: '1x.png', width: 32, height: 32, frame_count: 1, size: 2730, format: 'PNG' },
             { name: '4x.png', width: 128, height: 128, frame_count: 1, size: 27444, format: 'PNG' },
         ],
@@ -149,9 +156,7 @@ describe('SevenTVEmoteGateway fetchEmote', () => {
             source: EmoteSource.SEVENTV,
         });
         expect(fetcher).toHaveBeenCalledTimes(1);
-        expect(fetcher).toHaveBeenCalledWith(
-            'https://7tv.io/v3/emotes/01F6MKTFTG0009C9ZSNZTFV2ZF',
-        );
+        expect(fetcher).toHaveBeenCalledWith('https://7tv.io/v3/emotes/01F6MKTFTG0009C9ZSNZTFV2ZF');
     });
 
     it('downloads the largest GIF for an animated emote', async () => {

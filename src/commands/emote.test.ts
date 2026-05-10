@@ -24,7 +24,9 @@ describe('formatEmoteListChunks', () => {
     });
 
     it('splits across chunks when the running total exceeds the cap', () => {
-        const emotes = Array.from({ length: 200 }, (_, i) => mkEmote(`alias${i.toString().padStart(3, '0')}`));
+        const emotes = Array.from({ length: 200 }, (_, i) =>
+            mkEmote(`alias${i.toString().padStart(3, '0')}`),
+        );
         const chunks = formatEmoteListChunks(emotes);
         expect(chunks.length).toBeGreaterThan(1);
         for (const chunk of chunks) {
@@ -34,7 +36,7 @@ describe('formatEmoteListChunks', () => {
 
     it('honors a custom max length when each line fits', () => {
         const emotes = [mkEmote('one'), mkEmote('two'), mkEmote('three')];
-        const lineLen = `\`one\`: <https://7tv.app/emotes/one0000000000000>`.length;
+        const lineLen = '`one`: <https://7tv.app/emotes/one0000000000000>'.length;
         const chunks = formatEmoteListChunks(emotes, lineLen + 1);
         expect(chunks).toHaveLength(emotes.length);
     });

@@ -102,7 +102,12 @@ async function emoteList(
     const [first, ...rest] = chunks;
     await interaction.reply({ content: first });
     for (const chunk of rest) {
-        await interaction.followUp({ content: chunk });
+        // followUp on slash interactions, channel.send on prefix-message invocations.
+        if ('followUp' in interaction) {
+            await interaction.followUp({ content: chunk });
+        } else {
+            await interaction.channel.send({ content: chunk });
+        }
     }
 }
 
