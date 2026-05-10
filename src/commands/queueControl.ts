@@ -1,9 +1,4 @@
-import {
-    ChatInputCommandInteraction,
-    CommandInteraction,
-    Message,
-    MessageFlags,
-} from 'discord.js';
+import { ChatInputCommandInteraction, CommandInteraction, Message, MessageFlags } from 'discord.js';
 
 /**
  * Reply optionally ephemeral. Message-route replies silently drop the flag;

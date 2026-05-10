@@ -6,10 +6,7 @@ import { replyMaybeEphemeral } from './queueControl';
 
 const MAX_LISTED = 20;
 
-export function formatQueueMessage(snapshot: {
-    nowPlaying?: string;
-    upcoming: string[];
-}): string {
+export function formatQueueMessage(snapshot: { nowPlaying?: string; upcoming: string[] }): string {
     const lines: string[] = [];
     if (snapshot.nowPlaying) {
         lines.push(`Now playing: \`${snapshot.nowPlaying}\``);
