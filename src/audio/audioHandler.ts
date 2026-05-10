@@ -1,9 +1,11 @@
 import {
     AudioPlayer,
+    AudioPlayerState,
     AudioPlayerStatus,
     DiscordGatewayAdapterCreator,
     VoiceConnection,
     VoiceConnectionDisconnectReason,
+    VoiceConnectionState,
     VoiceConnectionStatus,
     entersState,
     joinVoiceChannel,
@@ -34,16 +36,18 @@ export default class AudioHandler {
         this.queue = new AudioQueue();
         this.player = new AudioPlayer();
 
-        // @ts-ignore
-        this.player.on('stateChange', async (oldState, newState) => {
-            log.debug(`AudioPlayer State: ${oldState.status} -> ${newState.status}`);
-            if (
-                newState.status === AudioPlayerStatus.Idle &&
-                oldState.status !== AudioPlayerStatus.Idle
-            ) {
-                await this.playNextFromQueue();
-            }
-        });
+        this.player.on(
+            'stateChange',
+            async (oldState: AudioPlayerState, newState: AudioPlayerState) => {
+                log.debug(`AudioPlayer State: ${oldState.status} -> ${newState.status}`);
+                if (
+                    newState.status === AudioPlayerStatus.Idle &&
+                    oldState.status !== AudioPlayerStatus.Idle
+                ) {
+                    await this.playNextFromQueue();
+                }
+            },
+        );
 
         this.player.on('error', (error) => {
             log.error(`Error: ${error.message}`);
@@ -150,50 +154,56 @@ export default class AudioHandler {
                 log.error(error.message);
             });
 
-            // @ts-ignore
-            this.connection.on('stateChange', async (oldState, newState) => {
-                log.debug(`Connection state: ${oldState.status} -> ${newState.status}`);
-                if (!this.connection) {
-                    log.error('No connection to act upon!');
-                    return;
-                }
-                if (newState.status === Disconnected) {
-                    if (
-                        newState.reason === VoiceConnectionDisconnectReason.WebSocketClose &&
-                        newState.closeCode === 4014
-                    ) {
-                        try {
-                            await entersState(this.connection, Connecting, 5_000);
-                        } catch {
+            this.connection.on(
+                'stateChange',
+                async (oldState: VoiceConnectionState, newState: VoiceConnectionState) => {
+                    log.debug(`Connection state: ${oldState.status} -> ${newState.status}`);
+                    if (!this.connection) {
+                        log.error('No connection to act upon!');
+                        return;
+                    }
+                    if (newState.status === Disconnected) {
+                        if (
+                            newState.reason === VoiceConnectionDisconnectReason.WebSocketClose &&
+                            newState.closeCode === 4014
+                        ) {
+                            try {
+                                await entersState(this.connection, Connecting, 5_000);
+                            } catch {
+                                this.connection.destroy();
+                            }
+                        } else if (this.connection.rejoinAttempts < 2) {
+                            await wait((this.connection.rejoinAttempts + 1) * 5_000);
+                            this.connection.rejoin();
+                        } else {
                             this.connection.destroy();
                         }
-                    } else if (this.connection.rejoinAttempts < 2) {
-                        await wait((this.connection.rejoinAttempts + 1) * 5_000);
-                        this.connection.rejoin();
-                    } else {
-                        this.connection.destroy();
+                    } else if (newState.status === Destroyed) {
+                        this.stop();
+                    } else if (
+                        !this.readyLock &&
+                        (newState.status === Connecting || newState.status === Signalling)
+                    ) {
+                        this.readyLock = true;
+                        try {
+                            await entersState(this.connection, Ready, 20_000);
+                            this.connection.subscribe(this.player);
+                            const audioResource = await track.getAudioResource();
+                            this.player.play(audioResource);
+                        } catch (err) {
+                            log.warn(
+                                `${!err ? 'Connection did not ready within time limit!' : err}`,
+                            );
+                            if (this.connection.state.status !== Destroyed) {
+                                this.connection.destroy();
+                            }
+                            throw err;
+                        } finally {
+                            this.readyLock = false;
+                        }
                     }
-                } else if (newState.status === Destroyed) {
-                    this.stop();
-                } else if (
-                    !this.readyLock &&
-                    (newState.status === Connecting || newState.status === Signalling)
-                ) {
-                    this.readyLock = true;
-                    try {
-                        await entersState(this.connection, Ready, 20_000);
-                        this.connection.subscribe(this.player);
-                        const audioResource = await track.getAudioResource();
-                        this.player.play(audioResource);
-                    } catch (err) {
-                        log.warn(`${!err ? 'Connection did not ready within time limit!' : err}`);
-                        if (this.connection.state.status !== Destroyed) this.connection.destroy();
-                        throw err;
-                    } finally {
-                        this.readyLock = false;
-                    }
-                }
-            });
+                },
+            );
         } else {
             const audioResource = await track.getAudioResource();
             this.player.play(audioResource);
