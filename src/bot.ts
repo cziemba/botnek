@@ -19,13 +19,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import AudioHandler from './audio/audioHandler';
 import COMMANDS from './commands';
+import { ClaudeConversation } from './commands/claude';
 import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway';
-import handleSingleEmote from './commands/emotes/emote';
+import { findEmoteAliases, handleEmotes, resolveEmoteAliases } from './commands/emotes/emote';
 import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway';
 import { helpMsgOptions } from './commands/help';
 import GuildDatabase from './data/db';
 import EmoteConfigManager from './data/emoteConfigManager';
-import { isEmoteAlias } from './data/types/emote';
 import log from './logging/logging';
 import { BotnekConfig } from './types/config';
 import GuildResource from './types/guildResource';
@@ -43,6 +43,8 @@ export default class Botnek {
 
     private readonly databases: GuildResource<GuildDatabase>;
 
+    private readonly claudeConversations: GuildResource<ClaudeConversation>;
+
     private readonly config: BotnekConfig;
 
     private readonly emoteGateways: {
@@ -58,6 +60,7 @@ export default class Botnek {
     constructor(config: BotnekConfig) {
         this.audioHandlers = new GuildResource<AudioHandler>();
         this.databases = new GuildResource<GuildDatabase>();
+        this.claudeConversations = new GuildResource<ClaudeConversation>();
         this.config = config;
         this.emoteGateways = {
             sevenTvGateway: new SevenTVEmoteGateway(config),
@@ -162,20 +165,11 @@ export default class Botnek {
         });
     }
 
-    /**
-     * Tries to handle emotes in a message.
-     * @private
-     * @param {Message<true>} message - The message to handle emotes in.
-     * @returns {Promise<void>} - A Promise that resolves when emotes are handled.
-     */
     private async tryHandleEmote(message: Message<true>): Promise<void> {
-        // TODO: handle multiple emotes in one message https://imagemagick.org/Usage/anim_mods/#merging
-        const msg = message.content.trim();
-        if (!isEmoteAlias(msg)) return;
-        const emoteConfigManager = new EmoteConfigManager(this.databases.get(message.guildId).db);
-        if (!emoteConfigManager.aliasExists(msg)) return;
-        const emote = emoteConfigManager.get(msg);
-        await handleSingleEmote(this.makeBotShim(), message, emote);
+        const manager = new EmoteConfigManager(this.databases.get(message.guildId).db);
+        const aliases = findEmoteAliases(message.content, manager);
+        if (aliases.length === 0) return;
+        await handleEmotes(this.makeBotShim(), message, resolveEmoteAliases(aliases, manager));
     }
 
     private makeBotShim() {
@@ -185,6 +179,7 @@ export default class Botnek {
             audioHandlers: this.audioHandlers,
             databases: this.databases,
             emoteGateways: this.emoteGateways,
+            claudeConversations: this.claudeConversations,
         };
     }
 
@@ -286,9 +281,7 @@ export default class Botnek {
 
     public async shutdown(): Promise<void> {
         log.info('Shutting down...');
-        for (const [, handler] of (
-            this.audioHandlers as unknown as { entries?: () => Iterable<[string, AudioHandler]> }
-        ).entries?.() ?? []) {
+        for (const handler of this.audioHandlers.values()) {
             handler.stop();
         }
         await this.client.destroy();

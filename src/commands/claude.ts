@@ -3,7 +3,6 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { Attachment, ChatInputCommandInteraction, CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';
 import { BotShim, Command } from '../types/command';
-import GuildResource from '../types/guildResource';
 
 // Idle TTL: any guild conversation with no activity for this long is wiped on next call.
 const CONVERSATION_TTL_MS = 5 * 60 * 1000;
@@ -32,14 +31,6 @@ export interface ClaudeConversation {
 let cachedClient: Anthropic | null = null;
 let cachedApiKey: string | null = null;
 
-// Fallback resource used only when bot.ts hasn't yet wired BotShim.claudeConversations.
-// This module-scoped value is intentionally minimal — the real instance lives on BotShim.
-const fallbackConversations = new GuildResource<ClaudeConversation>();
-
-function conversationsFor(bot: BotShim): GuildResource<ClaudeConversation> {
-    return bot.claudeConversations ?? fallbackConversations;
-}
-
 function getClient(apiKey: string): Anthropic {
     if (!cachedClient || cachedApiKey !== apiKey) {
         cachedClient = new Anthropic({ apiKey });
@@ -48,10 +39,8 @@ function getClient(apiKey: string): Anthropic {
     return cachedClient;
 }
 
-function getOrResetConversation(
-    conversations: GuildResource<ClaudeConversation>,
-    guildId: string,
-): ClaudeConversation {
+function getOrResetConversation(bot: BotShim, guildId: string): ClaudeConversation {
+    const conversations = bot.claudeConversations;
     if (conversations.has(guildId)) {
         const existing = conversations.get(guildId);
         if (existing.expiry > Date.now()) return existing;
@@ -165,7 +154,7 @@ async function claudeChat(
     }
 
     const { guildId } = interaction;
-    const conversation = getOrResetConversation(conversationsFor(bot), guildId);
+    const conversation = getOrResetConversation(bot, guildId);
     const images = opts.images ?? [];
     const userContent = buildUserContent(opts.prompt, images);
     conversation.messages.push({ role: 'user', content: userContent });
@@ -266,7 +255,7 @@ async function handleReset(
     bot: BotShim,
     interaction: ChatInputCommandInteraction<'cached'>,
 ): Promise<void> {
-    const conversations = conversationsFor(bot);
+    const conversations = bot.claudeConversations;
     const { guildId } = interaction;
     if (conversations.has(guildId)) {
         const existing = conversations.get(guildId);
@@ -284,7 +273,7 @@ async function handleSystem(
     interaction: ChatInputCommandInteraction<'cached'>,
 ): Promise<void> {
     const prompt = interaction.options.getString('prompt', true);
-    const conversations = conversationsFor(bot);
+    const conversations = bot.claudeConversations;
     const { guildId } = interaction;
     if (prompt.trim().toLowerCase() === 'clear') {
         if (conversations.has(guildId)) {
@@ -384,7 +373,7 @@ const Claude: Command = {
     },
     executeMessage: async (bot, message, args) => {
         if (args[0] === 'reset') {
-            const conversations = conversationsFor(bot);
+            const conversations = bot.claudeConversations;
             const { guildId } = message;
             if (conversations.has(guildId)) {
                 const existing = conversations.get(guildId);

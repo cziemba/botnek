@@ -16,8 +16,7 @@ export interface BotShim {
         bttvGateway: BetterTTVEmoteGateway;
         sevenTvGateway: SevenTVEmoteGateway;
     };
-    // Optional until bot.ts wires it up (parallel-agent ordering); claude.ts lazy-creates.
-    claudeConversations?: GuildResource<ClaudeConversation>;
+    claudeConversations: GuildResource<ClaudeConversation>;
 }
 
 /**
