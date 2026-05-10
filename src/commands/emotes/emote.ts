@@ -1,25 +1,30 @@
 import { Message, WebhookClient } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { Emote } from '../../data/types/emote';
+import EmoteConfigManager from '../../data/emoteConfigManager';
+import { Emote, EmoteAlias, isEmoteAlias } from '../../data/types/emote';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
 import { EMOTE_HOOK_NAME } from '../emote';
 import EmoteGateway from './emoteGateway';
 
-/**
- * 1. Interpret the message content as an emote (passed filter already)
- * 2. Fetch webhook from db (or reply w/ how-to)
- * 3. Fetch emote obj from db
- * 4. Delete user message
- * 5. Post to webhook emoji gif/jpeg (as original user?)
- */
-export default async function handleSingleEmote(
+export interface ResolvedEmote {
+    alias: EmoteAlias;
+    emote: Emote;
+}
+
+function emoteFilePath(client: BotShim, emote: Emote): string {
+    return path.resolve(
+        path.join(client.config.dataRoot, EmoteGateway.EMOTE_DIR, `${emote.id}.gif`),
+    );
+}
+
+export async function handleEmotes(
     client: BotShim,
     message: Message<true>,
-    emote: Emote,
+    resolved: ResolvedEmote[],
 ): Promise<void> {
-    if (!message.inGuild() || !!message.webhookId) return;
+    if (!message.inGuild() || !!message.webhookId || resolved.length === 0) return;
     const db = client.databases.get(message.guildId)?.db!;
     const { channelId } = message;
 
@@ -40,24 +45,51 @@ export default async function handleSingleEmote(
     });
 
     const avatar = message.author.avatarURL() || message.author.defaultAvatarURL;
-    const name = message.member?.displayName;
-    const parsed = message.content.trim();
-    const emoteFile = path.resolve(
-        path.join(client.config.dataRoot, EmoteGateway.EMOTE_DIR, `${emote.id}.gif`),
-    );
+    const name = message.member?.displayName ?? message.author.username;
 
-    await Promise.all([
-        message.delete(),
+    // Multiple webhook sends preserve per-emote sizing; ImageMagick stitching would force a single
+    // bounding box and lose the "each emote at full resolution" property users expect.
+    const sends = resolved.map(({ alias, emote }) =>
         webhookClient.send({
             avatarURL: avatar,
-            username: `${name}`,
+            username: name,
             files: [
                 {
-                    name: `${parsed}.gif`,
-                    attachment: fs.createReadStream(emoteFile),
-                    description: parsed,
+                    name: `${alias}.gif`,
+                    attachment: fs.createReadStream(emoteFilePath(client, emote)),
+                    description: alias,
                 },
             ],
         }),
-    ]);
+    );
+
+    await Promise.all([message.delete(), ...sends]);
+}
+
+export default async function handleSingleEmote(
+    client: BotShim,
+    message: Message<true>,
+    emote: Emote,
+): Promise<void> {
+    const alias = message.content.trim();
+    if (!isEmoteAlias(alias)) return;
+    await handleEmotes(client, message, [{ alias, emote }]);
+}
+
+export function findEmoteAliases(content: string, manager: EmoteConfigManager): EmoteAlias[] {
+    const tokens = content.split(/\s+/).filter(Boolean);
+    const aliases: EmoteAlias[] = [];
+    for (const tok of tokens) {
+        if (!isEmoteAlias(tok)) continue;
+        if (!manager.aliasExists(tok)) continue;
+        aliases.push(tok);
+    }
+    return aliases;
+}
+
+export function resolveEmoteAliases(
+    aliases: EmoteAlias[],
+    manager: EmoteConfigManager,
+): ResolvedEmote[] {
+    return aliases.map((alias) => ({ alias, emote: manager.get(alias) }));
 }
