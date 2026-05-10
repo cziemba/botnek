@@ -85,15 +85,6 @@ async function emoteList(
     });
 }
 
-async function tryRemoveEmoteHook(
-    client: BotShim,
-    interaction: CommandInteraction<'cached'> | Message<true>,
-): Promise<void> {
-    await interaction.reply({
-        content: '`TODO: not implemented yet`',
-    });
-}
-
 async function addEmote(
     client: BotShim,
     interaction: CommandInteraction<'cached'> | Message<true>,
@@ -171,9 +162,6 @@ const Emote: Command = {
                 .setName('enable')
                 .setDescription('Enable emoji support in this channel (default)'),
         )
-        .addSubcommand((disable) =>
-            disable.setName('disable').setDescription('Disable emoji support in this channel'),
-        )
         .addSubcommand((list) => list.setName('list').setDescription('List available emotes'))
         .addSubcommand((add) =>
             add
@@ -227,8 +215,6 @@ const Emote: Command = {
         } else if (subCommand === 'remove') {
             const alias = interaction.options.getString('alias', true);
             await removeEmote(client, interaction, alias);
-        } else if (subCommand === 'disable') {
-            await tryRemoveEmoteHook(client, interaction);
         } else if (subCommand === 'enable') {
             await tryRegisterEmoteHook(client, interaction);
         }
@@ -243,9 +229,6 @@ const Emote: Command = {
                 return;
             case 'remove':
                 await removeEmote(client, message, args[1]);
-                return;
-            case 'disable':
-                await tryRemoveEmoteHook(client, message);
                 return;
             case 'enable':
             default:

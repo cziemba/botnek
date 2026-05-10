@@ -1,12 +1,7 @@
-import ChatGPT from './commands/chatgpt';
-import Emote from './commands/emote';
 import { Help } from './commands/help';
-import Play from './commands/play';
-import ServerEmoji from './commands/serverEmoji';
-import Sfx from './commands/sfx';
-import Stop from './commands/stop';
+import { COMMAND_REGISTRY } from './commands/registry';
 import { Command } from './types/command';
 
-const COMMANDS: Command[] = [Sfx, Play, Stop, Help, Emote, ServerEmoji, ChatGPT];
+const COMMANDS: Command[] = [...COMMAND_REGISTRY, Help];
 
 export default COMMANDS;

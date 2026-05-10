@@ -11,7 +11,6 @@ export default class AudioQueue {
 
     constructor() {
         this.queue = [];
-        this.queue.shift();
     }
 
     public clear(): void {

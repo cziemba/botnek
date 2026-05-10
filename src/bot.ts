@@ -45,6 +45,11 @@ export default class Botnek {
 
     private readonly config: BotnekConfig;
 
+    private readonly emoteGateways: {
+        sevenTvGateway: SevenTVEmoteGateway;
+        bttvGateway: BetterTTVEmoteGateway;
+    };
+
     /**
      * Creates an instance of Botnek.
      * @constructor
@@ -54,6 +59,10 @@ export default class Botnek {
         this.audioHandlers = new GuildResource<AudioHandler>();
         this.databases = new GuildResource<GuildDatabase>();
         this.config = config;
+        this.emoteGateways = {
+            sevenTvGateway: new SevenTVEmoteGateway(config),
+            bttvGateway: new BetterTTVEmoteGateway(config),
+        };
 
         this.client = new Client({
             intents: [
@@ -109,26 +118,14 @@ export default class Botnek {
 
             const slashCommand = COMMANDS.find((c) => c.data.name === interaction.commandName);
             if (!slashCommand || !(interaction instanceof ChatInputCommandInteraction)) {
-                await interaction.followUp({
+                await interaction.reply({
                     content: 'Oops, an error occurred!',
                     ephemeral: true,
                 });
                 return;
             }
 
-            await slashCommand.executeCommand(
-                {
-                    client: this.client,
-                    config: this.config,
-                    audioHandlers: this.audioHandlers,
-                    databases: this.databases,
-                    emoteGateways: {
-                        sevenTvGateway: new SevenTVEmoteGateway(this.config),
-                        bttvGateway: new BetterTTVEmoteGateway(this.config),
-                    },
-                },
-                interaction,
-            );
+            await slashCommand.executeCommand(this.makeBotShim(), interaction);
         });
 
         // Register the prefix command handler and routing logic.
@@ -155,19 +152,8 @@ export default class Botnek {
                 return;
             }
 
-            const botShim = {
-                client: this.client,
-                config: this.config,
-                audioHandlers: this.audioHandlers,
-                databases: this.databases,
-                emoteGateways: {
-                    sevenTvGateway: new SevenTVEmoteGateway(this.config),
-                    bttvGateway: new BetterTTVEmoteGateway(this.config),
-                },
-            };
-
             try {
-                await prefixCommand.executeMessage(botShim, message, cmdArgs.slice(1));
+                await prefixCommand.executeMessage(this.makeBotShim(), message, cmdArgs.slice(1));
             } catch (e) {
                 await message.reply({
                     content: `An error occurred ${e}`,
@@ -189,20 +175,17 @@ export default class Botnek {
         const emoteConfigManager = new EmoteConfigManager(this.databases.get(message.guildId).db);
         if (!emoteConfigManager.aliasExists(msg)) return;
         const emote = emoteConfigManager.get(msg);
-        await handleSingleEmote(
-            {
-                client: this.client,
-                config: this.config,
-                audioHandlers: this.audioHandlers,
-                databases: this.databases,
-                emoteGateways: {
-                    sevenTvGateway: new SevenTVEmoteGateway(this.config),
-                    bttvGateway: new BetterTTVEmoteGateway(this.config),
-                },
-            },
-            message,
-            emote,
-        );
+        await handleSingleEmote(this.makeBotShim(), message, emote);
+    }
+
+    private makeBotShim() {
+        return {
+            client: this.client,
+            config: this.config,
+            audioHandlers: this.audioHandlers,
+            databases: this.databases,
+            emoteGateways: this.emoteGateways,
+        };
     }
 
     /**

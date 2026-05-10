@@ -50,10 +50,10 @@ export default class SevenTVEmoteGateway extends EmoteGateway {
             `Caching emote https://7tv.app/emotes/${sevenTVEmote.id} -> ${dlPath} -> ${gifPath}`,
         );
         const emoteData = await fetch(
-            sevenTVEmote.urls[3][1] ||
-                sevenTVEmote.urls[2][1] ||
-                sevenTVEmote[1][1] ||
-                sevenTVEmote[0][1],
+            sevenTVEmote.urls[3]?.[1] ||
+                sevenTVEmote.urls[2]?.[1] ||
+                sevenTVEmote.urls[1]?.[1] ||
+                sevenTVEmote.urls[0]?.[1],
         );
         if (!emoteData.ok)
             throw new Error(`Error fetching ${emoteData.url}: ${emoteData.statusText}`);

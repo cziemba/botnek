@@ -58,7 +58,7 @@ export async function sfxChain(
         return;
     }
 
-    const badSfxs = processedSfx.filter((sfx) => !!sfx.path).map((sfx) => sfx.parsedAlias);
+    const badSfxs = processedSfx.filter((sfx) => !sfx.path).map((sfx) => sfx.parsedAlias);
     if (badSfxs.length > 0) {
         log.warn(`Attempted to chain non-sfx [${badSfxs.join(',')}]`);
         await interaction.reply({

@@ -1,18 +1,13 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction, Message, SharedSlashCommand } from 'discord.js';
 import { Command } from '../types/command';
-import ChatGPT from './chatgpt';
-import Emote from './emote';
-import Play from './play';
-import ServerEmoji from './serverEmoji';
-import Sfx from './sfx';
-import Stop from './stop';
+import { COMMAND_REGISTRY } from './registry';
 
 /**
  * Exported for use in the bot news channel.
  */
 export const helpMsgOptions = () => {
-    const cmds: Command[] = [Play, Sfx, Stop, ServerEmoji, Emote, ChatGPT];
+    const cmds = COMMAND_REGISTRY.filter((c) => c.helpText);
 
     const cmdToMd = (cmd: SharedSlashCommand, helpText?: string) => ({
         name: `${cmd.description}`,
