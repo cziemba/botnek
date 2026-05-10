@@ -1,13 +1,16 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
+import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';
-import { Command } from '../types/command';
+import { BotShim, Command } from '../types/command';
+import { replyMaybeEphemeral } from './queueControl';
 
-const stopSound = async (client, interaction) => {
+const stopSound = async (
+    client: BotShim,
+    interaction: CommandInteraction<'cached'> | Message<true>,
+) => {
     if (interaction.guildId) {
         client.audioHandlers.get(interaction.guildId)?.stop();
-        await interaction.reply({
-            content: 'Stopping!',
-        });
+        await replyMaybeEphemeral(interaction, 'Stopping!');
     } else {
         log.error('Interaction has no guild associated!');
     }
