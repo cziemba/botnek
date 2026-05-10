@@ -1,8 +1,19 @@
 import { generateDependencyReport } from '@discordjs/voice';
-import configJsonRaw from './config.json' with { type: 'json' };
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { BotnekConfig } from './types/config';
 
-const configJson = configJsonRaw as BotnekConfig;
+const DEFAULT_CONFIG_PATH = path.join(os.homedir(), '.config', 'botnek2', 'config.json');
+const configPath = process.env.BOTNEK_CONFIG ?? DEFAULT_CONFIG_PATH;
+
+if (!fs.existsSync(configPath)) {
+    console.error(`botnek2: config not found at ${configPath}`);
+    console.error('Set BOTNEK_CONFIG to override the path, or create the file.');
+    process.exit(1);
+}
+
+const configJson = JSON.parse(fs.readFileSync(configPath, 'utf8')) as BotnekConfig;
 
 // Set env var BEFORE importing the logger so the singleton picks it up at construction.
 if (configJson.logLevel) {

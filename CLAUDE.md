@@ -17,7 +17,7 @@ Commands are registered both as Discord slash commands **and** as `!`-prefix mes
 ## Run / dev
 
 ```
-npm start                 # ts-node + pino-pretty, uses src/config.json
+npm start                 # ts-node + pino-pretty, reads ~/.config/botnek2/config.json (override via $BOTNEK_CONFIG)
 npm test                  # vitest run; *.integration.test.ts hits the network (YouTube)
 npm run lint[:fix]
 npm run prettier[:fix]
@@ -27,7 +27,7 @@ npm run redeploy          # pm2 restart botnek2 (production)
 
 Runtime system deps (not via npm): `ffmpeg`, `ffprobe`, ImageMagick `convert` / `identify`, `file`. All are shelled out via `execSync` / `exec`.
 
-Config is `src/config.json` (gitignored), shape in `src/types/config.ts`: `{ token, dataRoot, chatGptTokens? }`. `dataRoot` is where all persistent guild state and cached audio/emote files live.
+Config is loaded at runtime from `$BOTNEK_CONFIG` (default `~/.config/botnek2/config.json`), shape in `src/types/config.ts`: `{ token, dataRoot, anthropicApiKey?, logLevel? }`. `dataRoot` is where all persistent guild state and cached audio/emote files live. The Docker image sets `BOTNEK_CONFIG=/config/config.json` and operators bind-mount the file in.
 
 ## Architecture at a glance
 
@@ -61,4 +61,4 @@ Detailed write-ups:
 
 ## Secrets
 
-`src/config.json` holds bot token + ChatGPT keys in plaintext. The file is gitignored but has no other protection. Don't print config to logs, don't echo tokens back in replies, and rotate if the file leaves the host.
+The config file (default `~/.config/botnek2/config.json`) holds the Discord bot token and Anthropic API key in plaintext. It lives outside the repo by default; in dev, restrict its mode to `0600`. Don't print config to logs, don't echo tokens back in replies, and rotate if the file leaves the host.

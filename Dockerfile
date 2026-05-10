@@ -32,13 +32,15 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package.json tsconfig.json ./
 COPY src ./src
 
-# Run as non-root. /data is the conventional dataRoot mount point.
+# Run as non-root. /data is the conventional dataRoot mount point;
+# /config holds the bot config, mounted in by the operator.
 RUN useradd --system --create-home --uid 1001 botnek \
-    && mkdir -p /data \
-    && chown -R botnek:botnek /app /data
+    && mkdir -p /data /config \
+    && chown -R botnek:botnek /app /data /config
 USER botnek
 
-ENV NODE_ENV=production
-VOLUME ["/data"]
+ENV NODE_ENV=production \
+    BOTNEK_CONFIG=/config/config.json
+VOLUME ["/data", "/config"]
 
 ENTRYPOINT ["node", "--loader", "ts-node/esm", "src/index.ts"]

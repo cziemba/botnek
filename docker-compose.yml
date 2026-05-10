@@ -6,6 +6,6 @@ services:
     volumes:
       # Bot config (token, anthropicApiKey, dataRoot, logLevel).
       # Set "dataRoot": "/data" inside this file so persistent state lands on the volume below.
-      - ./config.json:/app/src/config.json:ro
+      - ./config.json:/config/config.json:ro
       # Persistent guild state, audio + emote caches, lowdb files.
       - ./data:/data

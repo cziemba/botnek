@@ -2,7 +2,7 @@
 
 ## Boot sequence
 
-1. `src/index.ts` imports the static `src/config.json`, logs `generateDependencyReport()` from `@discordjs/voice` (useful for confirming that opus + sodium native bindings are live), constructs `Botnek`, and calls `login`.
+1. `src/index.ts` resolves the config path from `$BOTNEK_CONFIG` (default `~/.config/botnek2/config.json`), reads + parses it, logs `generateDependencyReport()` from `@discordjs/voice` (useful for confirming that opus + sodium native bindings are live), constructs `Botnek`, and calls `login`. Exits with a clear error if the config file is missing.
 2. `Botnek` constructor (`src/bot.ts`) creates a `discord.js` `Client` with four intents — `Guilds`, `GuildVoiceStates`, `GuildMessages`, `MessageContent` — and wires three event handlers:
    - `clientReady` → per-guild bootstrapping.
    - `interactionCreate` → slash-command dispatch.

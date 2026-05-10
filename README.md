@@ -6,7 +6,7 @@ A single-process Node Discord bot (ESM, TypeScript, Node ≥22) built on `discor
 
 ## Configuration
 
-Configuration lives in `src/config.json` (gitignored). Shape:
+Configuration lives at `~/.config/botnek2/config.json` by default. Override with the `BOTNEK_CONFIG` env var. Shape:
 
 | field             | type                  | required | description                                                                                       |
 | ----------------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------- |
@@ -44,7 +44,7 @@ services:
     image: ghcr.io/cziemba/botnek:latest
     restart: unless-stopped
     volumes:
-      - ./config.json:/app/src/config.json:ro
+      - ./config.json:/config/config.json:ro
       - ./data:/data
 ```
 
