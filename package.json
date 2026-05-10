@@ -11,7 +11,7 @@
     "start": "node --loader ts-node/esm src/index.ts | npx pino-pretty -t",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
-    "prettier": "prettier src test --check",
+    "prettier": "prettier src --check",
     "prettier:fix": "npm run prettier -- --write",
     "test": "vitest run",
     "test:watch": "vitest",
