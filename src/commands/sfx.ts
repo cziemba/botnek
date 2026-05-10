@@ -6,6 +6,7 @@ import { sfxDel } from './sfx/del';
 import sfxHelp from './sfx/help';
 import sfxList from './sfx/list';
 import { sfxPlay } from './sfx/play';
+import { sfxSearch } from './sfx/search';
 
 const Sfx: Command = {
     data: new SlashCommandBuilder()
@@ -82,6 +83,17 @@ const Sfx: Command = {
                         .setRequired(true),
                 ),
         )
+        .addSubcommand((search) =>
+            search
+                .setName('search')
+                .setDescription('Fuzzy-search existing sfx aliases.')
+                .addStringOption((term) =>
+                    term
+                        .setName('term')
+                        .setDescription('Substring to search for in alias names.')
+                        .setRequired(true),
+                ),
+        )
         .addSubcommand((help) =>
             help.setName('help').setDescription('Print help for the sfx commands.'),
         ),
@@ -109,6 +121,9 @@ const Sfx: Command = {
         } else if (subCommand === 'del') {
             const alias = interaction.options.getString('alias', true);
             await sfxDel(client, interaction, { alias });
+        } else if (subCommand === 'search') {
+            const term = interaction.options.getString('term', true);
+            await sfxSearch(client, interaction, { term });
         } else if (subCommand === 'help') {
             await sfxHelp(client, interaction);
         }
@@ -134,6 +149,9 @@ const Sfx: Command = {
                 return;
             case 'play':
                 await sfxPlay(client, message, { alias: args[1] });
+                return;
+            case 'search':
+                await sfxSearch(client, message, { term: args.slice(1).join(' ') });
                 return;
             case 'help':
                 await sfxHelp(client, message);

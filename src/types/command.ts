@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, Client, Message, SharedSlashCommand } from 'discord.js';
 import AudioHandler from '../audio/audioHandler';
+import { ClaudeConversation } from '../commands/claude';
 import BetterTTVEmoteGateway from '../commands/emotes/betterTTVEmoteGateway';
 import SevenTVEmoteGateway from '../commands/emotes/sevenTVEmoteGateway';
 import GuildDatabase from '../data/db';
@@ -15,6 +16,7 @@ export interface BotShim {
         bttvGateway: BetterTTVEmoteGateway;
         sevenTvGateway: SevenTVEmoteGateway;
     };
+    claudeConversations: GuildResource<ClaudeConversation>;
 }
 
 /**

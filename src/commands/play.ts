@@ -3,6 +3,7 @@ import { CommandInteraction, Message } from 'discord.js';
 import YoutubeTrack from '../audio/tracks/youtubeTrack';
 import log from '../logging/logging';
 import { BotShim, Command } from '../types/command';
+import { replyMaybeEphemeral } from './queueControl';
 
 export interface PlayClipParams {
     url?: string;
@@ -16,28 +17,23 @@ export async function playClip(
     const { url } = params;
 
     if (!url) {
-        await interaction.reply({
-            ephemeral: true,
-            content: 'Missing url parameter',
-        });
+        await replyMaybeEphemeral(interaction, 'Missing url parameter', true);
         return;
     }
 
     if (!YoutubeTrack.checkUrl(url)) {
-        await interaction.reply({
-            ephemeral: true,
-            content: `Url scheme not supported: \`${url}\``,
-        });
+        await replyMaybeEphemeral(interaction, `Url scheme not supported: \`${url}\``, true);
         return;
     }
 
     const guild = interaction.member?.guild ?? undefined;
     const channelId = interaction.member?.voice.channel?.id;
     if (!guild || !channelId) {
-        await interaction.reply({
-            content: 'You must join a voice channel to play audio.',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            'You must join a voice channel to play audio.',
+            true,
+        );
         return;
     }
 
@@ -48,16 +44,11 @@ export async function playClip(
     const audioHandler = client.audioHandlers.get(interaction.guildId);
     if (!audioHandler) {
         log.error(`Audio handler was never initialized for guild[${interaction.guildId}`);
-        await interaction.reply({
-            content: "I'm sorry, something went wrong",
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, "I'm sorry, something went wrong", true);
         return;
     }
 
-    await interaction.reply({
-        content: `Added ${url} to the queue`,
-    });
+    await replyMaybeEphemeral(interaction, `Added ${url} to the queue`);
 
     const youtubeTrack = await YoutubeTrack.fromUrl(url);
     await audioHandler.enqueue({ interaction, track: youtubeTrack });

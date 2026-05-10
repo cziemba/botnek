@@ -19,13 +19,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import AudioHandler from './audio/audioHandler';
 import COMMANDS from './commands';
+import { ClaudeConversation } from './commands/claude';
 import BetterTTVEmoteGateway from './commands/emotes/betterTTVEmoteGateway';
-import handleSingleEmote from './commands/emotes/emote';
+import { findEmoteAliases, handleEmotes, resolveEmoteAliases } from './commands/emotes/emote';
 import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway';
 import { helpMsgOptions } from './commands/help';
 import GuildDatabase from './data/db';
 import EmoteConfigManager from './data/emoteConfigManager';
-import { isEmoteAlias } from './data/types/emote';
 import log from './logging/logging';
 import { BotnekConfig } from './types/config';
 import GuildResource from './types/guildResource';
@@ -43,7 +43,14 @@ export default class Botnek {
 
     private readonly databases: GuildResource<GuildDatabase>;
 
+    private readonly claudeConversations: GuildResource<ClaudeConversation>;
+
     private readonly config: BotnekConfig;
+
+    private readonly emoteGateways: {
+        sevenTvGateway: SevenTVEmoteGateway;
+        bttvGateway: BetterTTVEmoteGateway;
+    };
 
     /**
      * Creates an instance of Botnek.
@@ -53,7 +60,12 @@ export default class Botnek {
     constructor(config: BotnekConfig) {
         this.audioHandlers = new GuildResource<AudioHandler>();
         this.databases = new GuildResource<GuildDatabase>();
+        this.claudeConversations = new GuildResource<ClaudeConversation>();
         this.config = config;
+        this.emoteGateways = {
+            sevenTvGateway: new SevenTVEmoteGateway(config),
+            bttvGateway: new BetterTTVEmoteGateway(config),
+        };
 
         this.client = new Client({
             intents: [
@@ -109,26 +121,14 @@ export default class Botnek {
 
             const slashCommand = COMMANDS.find((c) => c.data.name === interaction.commandName);
             if (!slashCommand || !(interaction instanceof ChatInputCommandInteraction)) {
-                await interaction.followUp({
+                await interaction.reply({
                     content: 'Oops, an error occurred!',
                     ephemeral: true,
                 });
                 return;
             }
 
-            await slashCommand.executeCommand(
-                {
-                    client: this.client,
-                    config: this.config,
-                    audioHandlers: this.audioHandlers,
-                    databases: this.databases,
-                    emoteGateways: {
-                        sevenTvGateway: new SevenTVEmoteGateway(this.config),
-                        bttvGateway: new BetterTTVEmoteGateway(this.config),
-                    },
-                },
-                interaction,
-            );
+            await slashCommand.executeCommand(this.makeBotShim(), interaction);
         });
 
         // Register the prefix command handler and routing logic.
@@ -155,19 +155,8 @@ export default class Botnek {
                 return;
             }
 
-            const botShim = {
-                client: this.client,
-                config: this.config,
-                audioHandlers: this.audioHandlers,
-                databases: this.databases,
-                emoteGateways: {
-                    sevenTvGateway: new SevenTVEmoteGateway(this.config),
-                    bttvGateway: new BetterTTVEmoteGateway(this.config),
-                },
-            };
-
             try {
-                await prefixCommand.executeMessage(botShim, message, cmdArgs.slice(1));
+                await prefixCommand.executeMessage(this.makeBotShim(), message, cmdArgs.slice(1));
             } catch (e) {
                 await message.reply({
                     content: `An error occurred ${e}`,
@@ -176,33 +165,22 @@ export default class Botnek {
         });
     }
 
-    /**
-     * Tries to handle emotes in a message.
-     * @private
-     * @param {Message<true>} message - The message to handle emotes in.
-     * @returns {Promise<void>} - A Promise that resolves when emotes are handled.
-     */
     private async tryHandleEmote(message: Message<true>): Promise<void> {
-        // TODO: handle multiple emotes in one message https://imagemagick.org/Usage/anim_mods/#merging
-        const msg = message.content.trim();
-        if (!isEmoteAlias(msg)) return;
-        const emoteConfigManager = new EmoteConfigManager(this.databases.get(message.guildId).db);
-        if (!emoteConfigManager.aliasExists(msg)) return;
-        const emote = emoteConfigManager.get(msg);
-        await handleSingleEmote(
-            {
-                client: this.client,
-                config: this.config,
-                audioHandlers: this.audioHandlers,
-                databases: this.databases,
-                emoteGateways: {
-                    sevenTvGateway: new SevenTVEmoteGateway(this.config),
-                    bttvGateway: new BetterTTVEmoteGateway(this.config),
-                },
-            },
-            message,
-            emote,
-        );
+        const manager = new EmoteConfigManager(this.databases.get(message.guildId).db);
+        const aliases = findEmoteAliases(message.content, manager);
+        if (aliases.length === 0) return;
+        await handleEmotes(this.makeBotShim(), message, resolveEmoteAliases(aliases, manager));
+    }
+
+    private makeBotShim() {
+        return {
+            client: this.client,
+            config: this.config,
+            audioHandlers: this.audioHandlers,
+            databases: this.databases,
+            emoteGateways: this.emoteGateways,
+            claudeConversations: this.claudeConversations,
+        };
     }
 
     /**
@@ -299,5 +277,13 @@ export default class Botnek {
     public async login(token: string): Promise<void> {
         await this.client.login(token);
         log.debug('Logged in!');
+    }
+
+    public async shutdown(): Promise<void> {
+        log.info('Shutting down...');
+        for (const handler of this.audioHandlers.values()) {
+            handler.stop();
+        }
+        await this.client.destroy();
     }
 }

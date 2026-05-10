@@ -2,6 +2,7 @@ import { CommandInteraction, Message } from 'discord.js';
 import path from 'path';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
+import { replyMaybeEphemeral } from '../queueControl';
 import { handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString } from './common';
 
 export interface SfxPlayParams {
@@ -18,10 +19,7 @@ export async function sfxPlay(
     const { alias } = params;
 
     if (!alias) {
-        await interaction.reply({
-            content: 'No sfx alias provided!',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, 'No sfx alias provided!', true);
         return;
     }
 
@@ -33,18 +31,16 @@ export async function sfxPlay(
 
     if (!sfxPath) {
         log.info(`Unknown sfx ${parsedAlias}`);
-        await interaction.reply({
-            content: `\`${parsedAlias}\` does not exist!`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, `\`${parsedAlias}\` does not exist!`, true);
         return;
     }
 
     const guildDir = path.resolve(path.join(client.config.dataRoot, interaction.guildId));
 
-    await interaction.reply({
-        content: `Playing \`${sfxAliasToString(parsedAlias, modifiers)}\``,
-    });
+    await replyMaybeEphemeral(
+        interaction,
+        `Playing \`${sfxAliasToString(parsedAlias, modifiers)}\``,
+    );
 
     await audio.enqueue({
         interaction,

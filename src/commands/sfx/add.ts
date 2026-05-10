@@ -7,6 +7,7 @@ import YoutubeTrack from '../../audio/tracks/youtubeTrack';
 import { isValidSfxAlias } from '../../data/types';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
+import { replyMaybeEphemeral } from '../queueControl';
 import { RANDOM, sfxExists } from './common';
 
 export interface SfxAddParams {
@@ -29,7 +30,53 @@ export const momentParse = (time: string) => {
 
 export const RESERVED_ALIAS = [RANDOM];
 
-const MAX_SFX_LENGTH_SECONDS = 30;
+export const MAX_SFX_LENGTH_SECONDS = 30;
+
+export interface SfxRangeCheckInput {
+    videoLengthSeconds: number;
+    startFromSeconds?: number;
+    endAtSeconds?: number;
+    maxSeconds?: number;
+}
+
+export interface SfxRangeCheckResult {
+    ok: boolean;
+    effectiveStart: number;
+    effectiveEnd: number;
+    durationSeconds: number;
+    reason?: string;
+}
+
+export function validateSfxRange({
+    videoLengthSeconds,
+    startFromSeconds,
+    endAtSeconds,
+    maxSeconds = MAX_SFX_LENGTH_SECONDS,
+}: SfxRangeCheckInput): SfxRangeCheckResult {
+    const effectiveStart = startFromSeconds ?? 0;
+    const effectiveEnd = Math.min(endAtSeconds ?? videoLengthSeconds, videoLengthSeconds);
+    const durationSeconds = effectiveEnd - effectiveStart;
+
+    if (durationSeconds <= 0) {
+        return {
+            ok: false,
+            effectiveStart,
+            effectiveEnd,
+            durationSeconds,
+            reason: `Effective duration must be positive (got ${durationSeconds}s).`,
+        };
+    }
+    if (durationSeconds > maxSeconds) {
+        return {
+            ok: false,
+            effectiveStart,
+            effectiveEnd,
+            durationSeconds,
+            reason: `Too long: clip would be ${durationSeconds}s, max is ${maxSeconds}s.`,
+        };
+    }
+    return { ok: true, effectiveStart, effectiveEnd, durationSeconds };
+}
 
 export async function sfxAdd(
     client: BotShim,
@@ -42,10 +89,11 @@ export async function sfxAdd(
     log.info(JSON.stringify(params));
 
     if (!alias || !url) {
-        await interaction.reply({
-            content: 'Invalid input, please provide an alias and url',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            'Invalid input, please provide an alias and url',
+            true,
+        );
         return;
     }
 
@@ -64,28 +112,23 @@ export async function sfxAdd(
     }
 
     if (startFromSeconds && endAtSeconds && startFromSeconds > endAtSeconds) {
-        await interaction.reply({
-            content: 'startTime cannot be after endTime.',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, 'startTime cannot be after endTime.', true);
         return;
     }
 
     if (RESERVED_ALIAS.includes(alias)) {
         log.warn(`Reserved alias provided ${alias}`);
-        await interaction.reply({
-            content: `\`${alias}\` is a reserved alias.`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, `\`${alias}\` is a reserved alias.`, true);
         return;
     }
 
     if (!isValidSfxAlias(alias)) {
         log.warn(`Invalid alias provided ${alias}`);
-        await interaction.reply({
-            content: `\`${alias}\` is not a valid alias, only lowercase and numbers allowed.`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            `\`${alias}\` is not a valid alias, only lowercase and numbers allowed.`,
+            true,
+        );
         return;
     }
 
@@ -93,20 +136,14 @@ export async function sfxAdd(
 
     if (sfxExists(db, alias)) {
         log.warn(`Alias already exists: ${alias}`);
-        await interaction.reply({
-            content: `Sfx ${alias} already exists!`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, `Sfx ${alias} already exists!`, true);
         return;
     }
 
     const validYoutube = YoutubeTrack.checkUrl(url);
     if (!validYoutube) {
         log.warn(`URL ${url} is not a valid youtube url`);
-        await interaction.reply({
-            content: `URL ${url} is not supported`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, `URL ${url} is not supported`, true);
         return;
     }
 
@@ -122,21 +159,13 @@ export async function sfxAdd(
     await YoutubeTrack.fromUrl(url)
         .then((track) => {
             const videoLengthSeconds = parseInt(track.videoDetails.lengthSeconds, 10);
-            if (startFromSeconds) {
-                if (videoLengthSeconds - startFromSeconds > MAX_SFX_LENGTH_SECONDS) {
-                    if (!endAtSeconds || endAtSeconds - startFromSeconds > MAX_SFX_LENGTH_SECONDS) {
-                        throw new Error(
-                            `Too long: [${url}] would be > ${MAX_SFX_LENGTH_SECONDS} seconds.`,
-                        );
-                    }
-                    if (videoLengthSeconds < endAtSeconds - startFromSeconds) {
-                        throw new Error(
-                            `Duration ${endAtSeconds - startFromSeconds} greater than video length ${videoLengthSeconds}`,
-                        );
-                    }
-                }
-            } else if (videoLengthSeconds > MAX_SFX_LENGTH_SECONDS) {
-                throw new Error(`Too long: [${url}] would be > ${MAX_SFX_LENGTH_SECONDS} seconds.`);
+            const range = validateSfxRange({
+                videoLengthSeconds,
+                startFromSeconds,
+                endAtSeconds,
+            });
+            if (!range.ok) {
+                throw new Error(`${range.reason} [${url}]`);
             }
             return track;
         })
@@ -145,15 +174,12 @@ export async function sfxAdd(
             soundsDb.set(alias, filePath).value();
             db.write();
         })
-        .then(() => {
-            interaction.reply({
-                content: `Added \`${alias}\``,
-            });
-        })
-        .catch((err) => {
-            interaction.reply({
-                content: `An error occurred [see logs for full details]: \`\`\`\n${err.message.substring(0, 1500)}\n[...TRUNCATED...]\n\`\`\``,
-                ephemeral: true,
-            });
-        });
+        .then(() => replyMaybeEphemeral(interaction, `Added \`${alias}\``))
+        .catch((err) =>
+            replyMaybeEphemeral(
+                interaction,
+                `An error occurred [see logs for full details]: \`\`\`\n${err.message.substring(0, 1500)}\n[...TRUNCATED...]\n\`\`\``,
+                true,
+            ),
+        );
 }

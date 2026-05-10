@@ -1,5 +1,6 @@
 import { CommandInteraction, Message } from 'discord.js';
 import { BotShim } from '../../types/command';
+import { replyMaybeEphemeral } from '../queueControl';
 
 export default async function sfxList(
     client: BotShim,
@@ -14,11 +15,7 @@ export default async function sfxList(
         .value()
         .sort((s1, s2) => s1[0].localeCompare(s2[0]));
 
-    const aliases = sounds.map(([alias, _path]) => {
-        const formattedAlias = `${alias}`;
-        // const formattedDuration = `${ffmpegDurationSeconds(path)}s`;
-        return `${formattedAlias}`;
-    });
+    const aliases = sounds.map(([alias, _path]) => `${alias}`);
 
     const listChunkSize = 10;
     const aliasChunked: string[][] = [];
@@ -26,8 +23,9 @@ export default async function sfxList(
         aliasChunked.push(aliases.slice(i, i + listChunkSize));
     }
 
-    await interaction.reply({
-        content: `\`\`\`\n${aliasChunked.map((a) => a.join(' | ')).join('\n')}\n\`\`\``,
-        ephemeral: true,
-    });
+    await replyMaybeEphemeral(
+        interaction,
+        `\`\`\`\n${aliasChunked.map((a) => a.join(' | ')).join('\n')}\n\`\`\``,
+        true,
+    );
 }

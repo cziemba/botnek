@@ -54,7 +54,7 @@ export default class YoutubeTrack extends Track {
         }
 
         // If duration args present: ffmpeg trim and save at a deterministic location
-        if (startAtSeconds || endAtSeconds) {
+        if (startAtSeconds !== undefined || endAtSeconds !== undefined) {
             const durationArgs = {
                 start: startAtSeconds,
                 end: endAtSeconds,

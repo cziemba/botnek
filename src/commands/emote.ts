@@ -3,9 +3,12 @@ import { CommandInteraction, Message, TextChannel, Webhook } from 'discord.js';
 import { LowWithLodash } from '../data/db';
 import EmoteConfigManager from '../data/emoteConfigManager';
 import { GuildData } from '../data/types';
-import { EmoteSource, isEmoteAlias } from '../data/types/emote';
+import { Emote, EmoteSource, isEmoteAlias } from '../data/types/emote';
 import log from '../logging/logging';
 import { BotShim, Command } from '../types/command';
+
+// Discord's hard cap is 2000; leave headroom for trailing newlines / chunk boundaries.
+const MAX_CHUNK_LEN = 1900;
 
 export const EMOTE_HOOK_NAME: string = 'emojiHook';
 
@@ -57,41 +60,55 @@ export async function tryRegisterEmoteHook(
     });
 }
 
+function emoteSourceUrl(emote: Emote): string {
+    switch (emote.source) {
+        case EmoteSource.BTTV:
+            return `https://betterttv.com/emotes/${emote.id}`;
+        case EmoteSource.SEVENTV:
+            return `https://7tv.app/emotes/${emote.id}`;
+        default:
+            return '';
+    }
+}
+
+export function formatEmoteListChunks(
+    emotes: [string, Emote][],
+    maxLen: number = MAX_CHUNK_LEN,
+): string[] {
+    if (emotes.length === 0) return ['No emotes!'];
+    const chunks: string[] = [];
+    let current = '';
+    for (const [alias, emote] of emotes) {
+        const line = `\`${alias}\`: <${emoteSourceUrl(emote)}>`;
+        const candidate = current ? `${current}\n${line}` : line;
+        if (candidate.length > maxLen && current) {
+            chunks.push(current);
+            current = line;
+        } else {
+            current = candidate;
+        }
+    }
+    if (current) chunks.push(current);
+    return chunks;
+}
+
 async function emoteList(
     client: BotShim,
     interaction: CommandInteraction<'cached'> | Message<true>,
 ): Promise<void> {
     const emoteConfigManager = new EmoteConfigManager(client.databases.get(interaction.guildId).db);
     const emotes = emoteConfigManager.listEmotes();
-    const sevenTvUrl = (id: string) => `https://7tv.app/emotes/${id}`;
-    const bttvUrl = (id: string) => `https://betterttv.com/emotes/${id}`;
-    const emoteText = emotes
-        .map(([alias, e]) => {
-            let url = '';
-            switch (e.source) {
-                case EmoteSource.BTTV:
-                    url = bttvUrl(e.id);
-                    break;
-                case EmoteSource.SEVENTV:
-                    url = sevenTvUrl(e.id);
-                    break;
-                default:
-            }
-            return `\`${alias}\`: <${url}>`;
-        })
-        .join('\n');
-    await interaction.reply({
-        content: emoteText || 'No emotes!',
-    });
-}
-
-async function tryRemoveEmoteHook(
-    client: BotShim,
-    interaction: CommandInteraction<'cached'> | Message<true>,
-): Promise<void> {
-    await interaction.reply({
-        content: '`TODO: not implemented yet`',
-    });
+    const chunks = formatEmoteListChunks(emotes);
+    const [first, ...rest] = chunks;
+    await interaction.reply({ content: first });
+    for (const chunk of rest) {
+        // followUp on slash interactions, channel.send on prefix-message invocations.
+        if ('followUp' in interaction) {
+            await interaction.followUp({ content: chunk });
+        } else {
+            await interaction.channel.send({ content: chunk });
+        }
+    }
 }
 
 async function addEmote(
@@ -171,9 +188,6 @@ const Emote: Command = {
                 .setName('enable')
                 .setDescription('Enable emoji support in this channel (default)'),
         )
-        .addSubcommand((disable) =>
-            disable.setName('disable').setDescription('Disable emoji support in this channel'),
-        )
         .addSubcommand((list) => list.setName('list').setDescription('List available emotes'))
         .addSubcommand((add) =>
             add
@@ -227,8 +241,6 @@ const Emote: Command = {
         } else if (subCommand === 'remove') {
             const alias = interaction.options.getString('alias', true);
             await removeEmote(client, interaction, alias);
-        } else if (subCommand === 'disable') {
-            await tryRemoveEmoteHook(client, interaction);
         } else if (subCommand === 'enable') {
             await tryRegisterEmoteHook(client, interaction);
         }
@@ -243,9 +255,6 @@ const Emote: Command = {
                 return;
             case 'remove':
                 await removeEmote(client, message, args[1]);
-                return;
-            case 'disable':
-                await tryRemoveEmoteHook(client, message);
                 return;
             case 'enable':
             default:

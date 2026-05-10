@@ -19,4 +19,8 @@ export default class GuildResource<T> {
     public has(guildId: Snowflake): boolean {
         return this.map.has(guildId);
     }
+
+    public values(): IterableIterator<T> {
+        return this.map.values();
+    }
 }

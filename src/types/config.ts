@@ -1,5 +1,8 @@
+import type { LevelWithSilent } from 'pino';
+
 export interface BotnekConfig {
     token: string;
     dataRoot: string;
-    chatGptTokens?: string[];
+    anthropicApiKey?: string;
+    logLevel?: LevelWithSilent;
 }

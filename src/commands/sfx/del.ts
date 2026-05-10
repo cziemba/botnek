@@ -3,6 +3,7 @@ import fs from 'fs';
 import { isValidSfxAlias } from '../../data/types';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
+import { replyMaybeEphemeral } from '../queueControl';
 import { sfxExists } from './common';
 
 export interface SfxDelParams {
@@ -18,19 +19,17 @@ export async function sfxDel(
     const { alias } = params;
 
     if (!alias) {
-        await interaction.reply({
-            content: 'No alias provided',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, 'No alias provided', true);
         return;
     }
 
     if (!isValidSfxAlias(alias)) {
         log.warn(`Invalid alias provided ${alias}`);
-        await interaction.reply({
-            content: `\`${alias}\` is not a valid alias, only lowercase and numbers allowed.`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            `\`${alias}\` is not a valid alias, only lowercase and numbers allowed.`,
+            true,
+        );
         return;
     }
 
@@ -38,10 +37,7 @@ export async function sfxDel(
 
     if (!sfxExists(db, alias)) {
         log.warn(`Sfx does not exist: ${alias}`);
-        await interaction.reply({
-            content: `Sfx \`${alias}\` does not exist!`,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, `Sfx \`${alias}\` does not exist!`, true);
         return;
     }
 
@@ -52,22 +48,19 @@ export async function sfxDel(
 
     if (!fs.existsSync(sfxPath)) {
         log.warn(`Sfx file does not exist. ${sfxPath} removed from database`);
-        await interaction.reply({
-            content: 'Sfx file did not exist, removed.',
-        });
+        await replyMaybeEphemeral(interaction, 'Sfx file did not exist, removed.');
         return;
     }
 
     try {
         fs.rmSync(sfxPath);
-        await interaction.reply({
-            content: `Deleted \`${alias}\``,
-        });
+        await replyMaybeEphemeral(interaction, `Deleted \`${alias}\``);
     } catch (err) {
         log.error(`There was a problem removing ${sfxPath}: ${err}`);
-        await interaction.reply({
-            content: `An error occurred while deleting ${sfxPath}: \`${err}\``,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            `An error occurred while deleting ${sfxPath}: \`${err}\``,
+            true,
+        );
     }
 }
