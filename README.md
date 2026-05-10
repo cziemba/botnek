@@ -63,6 +63,24 @@ docker compose up -d
 
 If you skip the `.env`, the container runs as UID 1001 and you'll need `sudo chown -R 1001:1001 ./data` once.
 
+### Viewing logs
+
+The bot emits structured JSON to stdout. With compose:
+
+```sh
+docker compose logs -f botnek            # follow live
+docker compose logs --tail=200 botnek    # last 200 lines
+docker compose logs --since=1h botnek    # last hour
+```
+
+Pretty-print on your host with `pino-pretty`:
+
+```sh
+docker compose logs -f botnek | npx pino-pretty -t
+```
+
+Logs are persisted via the `json-file` driver in `docker-compose.yml`, capped at 5 × 10 MB rolling files (50 MB total). Adjust `max-size` / `max-file` to taste.
+
 ## Run from source (development)
 
 Requires Node ≥22 and the following binaries on `$PATH` (shelled out, not pulled via npm):

@@ -13,3 +13,8 @@ services:
       - ./config.json:/config/config.json:ro
       # Persistent guild state, audio + emote caches, lowdb files.
       - ./data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
