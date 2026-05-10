@@ -50,9 +50,18 @@ services:
 
 With `"dataRoot": "/data"` in your `config.json`, all persistent state lands on the mounted volume.
 
+The container needs to write to `./data` as a host user. Set `PUID`/`PGID` to your UID/GID so bind-mount writes succeed — easiest via a `.env` next to the compose file:
+
 ```sh
+cat > .env <<EOF
+PUID=$(id -u)
+PGID=$(id -g)
+EOF
+
 docker compose up -d
 ```
+
+If you skip the `.env`, the container runs as UID 1001 and you'll need `sudo chown -R 1001:1001 ./data` once.
 
 ## Run from source (development)
 
