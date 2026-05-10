@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import { BotnekConfig } from './types/config';
 
-const DEFAULT_CONFIG_PATH = path.join(os.homedir(), '.config', 'botnek2', 'config.json');
+const DEFAULT_CONFIG_PATH = path.join(os.homedir(), '.botnek2', 'config.json');
 const configPath = process.env.BOTNEK_CONFIG ?? DEFAULT_CONFIG_PATH;
 
 if (!fs.existsSync(configPath)) {

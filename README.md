@@ -4,9 +4,46 @@
 
 A single-process Node Discord bot (ESM, TypeScript, Node ≥22) built on `discord.js` v14 and `@discordjs/voice`. Provides per-guild sound effects, YouTube playback, 7TV/BTTV emote rendering through channel webhooks, and a Claude (`@anthropic-ai/sdk`) chat passthrough. Commands are exposed both as Discord slash commands and `!`-prefix message commands.
 
+## Install with Docker (recommended)
+
+A pre-built image is published to GHCR on every `v*` tag and bakes in `ffmpeg`, ImageMagick, and `file` — no host install needed. State lives in `~/.botnek2/` so backups are just `tar czf botnek2.tgz ~/.botnek2`.
+
+```sh
+mkdir -p ~/.botnek2/data
+nano ~/.botnek2/config.json   # paste the example below, set your token
+
+docker run -d \
+  --name botnek \
+  --restart unless-stopped \
+  --user "$(id -u):$(id -g)" \
+  -v ~/.botnek2/config.json:/config/config.json:ro \
+  -v ~/.botnek2/data:/data \
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=5 \
+  ghcr.io/cziemba/botnek:latest
+```
+
+That's it — `--restart unless-stopped` brings the bot back on host reboots and crashes. To stop: `docker stop botnek`. To upgrade: `docker pull ghcr.io/cziemba/botnek:latest && docker rm -f botnek` then re-run the command above.
+
+### Viewing logs
+
+The bot emits structured JSON to stdout.
+
+```sh
+docker logs -f botnek                  # follow live
+docker logs --tail=200 botnek          # last 200 lines
+docker logs --since=1h botnek          # last hour
+docker logs -f botnek | npx pino-pretty -t   # pretty-print
+```
+
+Logs are capped at 5 × 10 MB rolling files (50 MB total) by the `--log-opt` flags above.
+
+### Using compose instead
+
+If you'd rather manage the bot declaratively, the repo ships a [`docker-compose.yml`](docker-compose.yml). Drop it in `~/.botnek2/`, write a `.env` alongside it with `PUID=$(id -u)` and `PGID=$(id -g)`, then `docker compose up -d`.
+
 ## Configuration
 
-Configuration lives at `~/.config/botnek2/config.json` by default. Override with the `BOTNEK_CONFIG` env var. Shape:
+Configuration lives at `~/.botnek2/config.json` by default. Override with the `BOTNEK_CONFIG` env var. Shape:
 
 | field             | type                  | required | description                                                                                       |
 | ----------------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------- |
@@ -15,7 +52,7 @@ Configuration lives at `~/.config/botnek2/config.json` by default. Override with
 | `anthropicApiKey` | `string`              | no       | Anthropic API key for the `/claude` command. Omit to disable.                                     |
 | `logLevel`        | `pino.LevelWithSilent` | no       | Pino log level (`trace` \| `debug` \| `info` \| `warn` \| `error` \| `fatal` \| `silent`). Defaults to `trace`. Override at runtime with the `LOG_LEVEL` env var. |
 
-Example:
+Example for the Docker install above (`dataRoot` is the in-container path):
 
 ```json
 {
@@ -26,60 +63,7 @@ Example:
 }
 ```
 
-`dataRoot` must be writable — the bot creates per-guild subdirectories aggressively (audio cache, emote cache, lowdb files). Commands are guild-scoped, not global, so adding the bot to a new guild requires a process restart so its commands get published there.
-
-## Run with Docker (recommended)
-
-A pre-built image is published to GHCR on every `v*` tag and bakes in `ffmpeg`, ImageMagick, and `file` — no host install needed.
-
-```sh
-docker pull ghcr.io/cziemba/botnek:latest
-```
-
-Minimal compose setup (see [`docker-compose.yml`](docker-compose.yml)):
-
-```yaml
-services:
-  botnek:
-    image: ghcr.io/cziemba/botnek:latest
-    restart: unless-stopped
-    volumes:
-      - ./config.json:/config/config.json:ro
-      - ./data:/data
-```
-
-With `"dataRoot": "/data"` in your `config.json`, all persistent state lands on the mounted volume.
-
-The container needs to write to `./data` as a host user. Set `PUID`/`PGID` to your UID/GID so bind-mount writes succeed — easiest via a `.env` next to the compose file:
-
-```sh
-cat > .env <<EOF
-PUID=$(id -u)
-PGID=$(id -g)
-EOF
-
-docker compose up -d
-```
-
-If you skip the `.env`, the container runs as UID 1001 and you'll need `sudo chown -R 1001:1001 ./data` once.
-
-### Viewing logs
-
-The bot emits structured JSON to stdout. With compose:
-
-```sh
-docker compose logs -f botnek            # follow live
-docker compose logs --tail=200 botnek    # last 200 lines
-docker compose logs --since=1h botnek    # last hour
-```
-
-Pretty-print on your host with `pino-pretty`:
-
-```sh
-docker compose logs -f botnek | npx pino-pretty -t
-```
-
-Logs are persisted via the `json-file` driver in `docker-compose.yml`, capped at 5 × 10 MB rolling files (50 MB total). Adjust `max-size` / `max-file` to taste.
+`dataRoot` must be writable. Commands are guild-scoped, not global — adding the bot to a new guild requires a process restart so its commands get published there.
 
 ## Run from source (development)
 
@@ -95,6 +79,8 @@ npm install
 npm test            # vitest run; *.integration.test.ts hits the network (YouTube)
 npm start           # ts-node + pino-pretty
 ```
+
+For native runs, set `"dataRoot": "/home/you/.botnek2/data"` (or any host path) in your `~/.botnek2/config.json` — the in-container `/data` only resolves inside the image.
 
 Other useful scripts:
 
