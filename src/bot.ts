@@ -283,4 +283,14 @@ export default class Botnek {
         await this.client.login(token);
         log.debug('Logged in!');
     }
+
+    public async shutdown(): Promise<void> {
+        log.info('Shutting down...');
+        for (const [, handler] of (
+            this.audioHandlers as unknown as { entries?: () => Iterable<[string, AudioHandler]> }
+        ).entries?.() ?? []) {
+            handler.stop();
+        }
+        await this.client.destroy();
+    }
 }
