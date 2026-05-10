@@ -29,7 +29,53 @@ export const momentParse = (time: string) => {
 
 export const RESERVED_ALIAS = [RANDOM];
 
-const MAX_SFX_LENGTH_SECONDS = 30;
+export const MAX_SFX_LENGTH_SECONDS = 30;
+
+export interface SfxRangeCheckInput {
+    videoLengthSeconds: number;
+    startFromSeconds?: number;
+    endAtSeconds?: number;
+    maxSeconds?: number;
+}
+
+export interface SfxRangeCheckResult {
+    ok: boolean;
+    effectiveStart: number;
+    effectiveEnd: number;
+    durationSeconds: number;
+    reason?: string;
+}
+
+export function validateSfxRange({
+    videoLengthSeconds,
+    startFromSeconds,
+    endAtSeconds,
+    maxSeconds = MAX_SFX_LENGTH_SECONDS,
+}: SfxRangeCheckInput): SfxRangeCheckResult {
+    const effectiveStart = startFromSeconds ?? 0;
+    const effectiveEnd = Math.min(endAtSeconds ?? videoLengthSeconds, videoLengthSeconds);
+    const durationSeconds = effectiveEnd - effectiveStart;
+
+    if (durationSeconds <= 0) {
+        return {
+            ok: false,
+            effectiveStart,
+            effectiveEnd,
+            durationSeconds,
+            reason: `Effective duration must be positive (got ${durationSeconds}s).`,
+        };
+    }
+    if (durationSeconds > maxSeconds) {
+        return {
+            ok: false,
+            effectiveStart,
+            effectiveEnd,
+            durationSeconds,
+            reason: `Too long: clip would be ${durationSeconds}s, max is ${maxSeconds}s.`,
+        };
+    }
+    return { ok: true, effectiveStart, effectiveEnd, durationSeconds };
+}
 
 export async function sfxAdd(
     client: BotShim,
@@ -122,21 +168,13 @@ export async function sfxAdd(
     await YoutubeTrack.fromUrl(url)
         .then((track) => {
             const videoLengthSeconds = parseInt(track.videoDetails.lengthSeconds, 10);
-            if (startFromSeconds) {
-                if (videoLengthSeconds - startFromSeconds > MAX_SFX_LENGTH_SECONDS) {
-                    if (!endAtSeconds || endAtSeconds - startFromSeconds > MAX_SFX_LENGTH_SECONDS) {
-                        throw new Error(
-                            `Too long: [${url}] would be > ${MAX_SFX_LENGTH_SECONDS} seconds.`,
-                        );
-                    }
-                    if (videoLengthSeconds < endAtSeconds - startFromSeconds) {
-                        throw new Error(
-                            `Duration ${endAtSeconds - startFromSeconds} greater than video length ${videoLengthSeconds}`,
-                        );
-                    }
-                }
-            } else if (videoLengthSeconds > MAX_SFX_LENGTH_SECONDS) {
-                throw new Error(`Too long: [${url}] would be > ${MAX_SFX_LENGTH_SECONDS} seconds.`);
+            const range = validateSfxRange({
+                videoLengthSeconds,
+                startFromSeconds,
+                endAtSeconds,
+            });
+            if (!range.ok) {
+                throw new Error(`${range.reason} [${url}]`);
             }
             return track;
         })
