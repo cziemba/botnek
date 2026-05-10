@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Stub config.json
+        run: echo '{"token":"","dataRoot":"./data"}' > src/config.json
+
       - name: Lint
         run: npm run lint
 
