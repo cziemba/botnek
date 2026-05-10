@@ -3,6 +3,7 @@ import path from 'path';
 import { SfxAlias, SfxModifier } from '../../data/types.js';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
+import { replyMaybeEphemeral } from '../queueControl';
 import { handleModifiers, loadSfxPath, parseSfxAlias, sfxAliasToString } from './common';
 
 export interface SfxChainParams {
@@ -24,10 +25,7 @@ export async function sfxChain(
     const db = client.databases.get(interaction.guildId)?.db!;
 
     if (!params.chain) {
-        await interaction.reply({
-            content: 'No sfx chain provided.',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, 'No sfx chain provided.', true);
         return;
     }
 
@@ -43,28 +41,27 @@ export async function sfxChain(
         );
 
     if (processedSfx.length > 5) {
-        await interaction.reply({
-            content: 'Can only chain up to 5 sound effects, you psychopath.',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            'Can only chain up to 5 sound effects, you psychopath.',
+            true,
+        );
         return;
     }
 
     if (processedSfx.length === 0) {
-        await interaction.reply({
-            content: 'Must chain at least one sfx',
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(interaction, 'Must chain at least one sfx', true);
         return;
     }
 
     const badSfxs = processedSfx.filter((sfx) => !sfx.path).map((sfx) => sfx.parsedAlias);
     if (badSfxs.length > 0) {
         log.warn(`Attempted to chain non-sfx [${badSfxs.join(',')}]`);
-        await interaction.reply({
-            content: `The following sfx don't exist: \`[${badSfxs.join(', ')}]\``,
-            ephemeral: true,
-        });
+        await replyMaybeEphemeral(
+            interaction,
+            `The following sfx don't exist: \`[${badSfxs.join(', ')}]\``,
+            true,
+        );
         return;
     }
 
@@ -79,7 +76,8 @@ export async function sfxChain(
         );
     });
     await Promise.all(enqueuePromises);
-    await interaction.reply({
-        content: `Queued chain of ${processedSfx.map((s) => sfxAliasToString(s.parsedAlias, s.modifiers)).join(' -> ')}`,
-    });
+    await replyMaybeEphemeral(
+        interaction,
+        `Queued chain of ${processedSfx.map((s) => sfxAliasToString(s.parsedAlias, s.modifiers)).join(' -> ')}`,
+    );
 }
