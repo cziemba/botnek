@@ -21,6 +21,8 @@ const { Connecting, Destroyed, Disconnected, Signalling, Ready } = VoiceConnecti
 
 const { Idle } = AudioPlayerStatus;
 
+export const IDLE_DISCONNECT_MS = 5 * 60 * 1000;
+
 export default class AudioHandler {
     private readonly player: AudioPlayer;
 
@@ -32,7 +34,12 @@ export default class AudioHandler {
 
     private readyLock: boolean = false;
 
-    constructor() {
+    private idleTimer?: NodeJS.Timeout;
+
+    private readonly idleTimeoutMs: number;
+
+    constructor(idleTimeoutMs: number = IDLE_DISCONNECT_MS) {
+        this.idleTimeoutMs = idleTimeoutMs;
         this.queue = new AudioQueue();
         this.player = new AudioPlayer();
 
@@ -56,6 +63,7 @@ export default class AudioHandler {
 
     public async enqueue(request: AudioRequest): Promise<void> {
         log.debug(`Enqueuing ${request.track.title}`);
+        this.cancelIdleTimer();
         this.queue.enqueue(request);
         log.debug(`Current queue: [${this.queue.queue.map((r) => r.track.title).join(',')}]`);
         await this.playNextFromQueue();
@@ -66,12 +74,37 @@ export default class AudioHandler {
      */
     public stop() {
         this.queueLock = true;
+        this.cancelIdleTimer();
         this.queue.clear();
         this.player.stop(true);
         if (this.connection && this.connection.state.status !== Destroyed) {
             this.connection.destroy();
         }
         this.queueLock = false;
+    }
+
+    public skip(): boolean {
+        // because player.stop(true) flips us to Idle and the stateChange handler then drains the queue
+        return this.player.stop(true);
+    }
+
+    public pause(): boolean {
+        return this.player.pause(true);
+    }
+
+    public resume(): boolean {
+        return this.player.unpause();
+    }
+
+    public getQueueSnapshot(): { nowPlaying?: string; upcoming: string[] } {
+        const upcoming = this.queue.queue.map((r) => r.track.title);
+        const playingTitle = (this.player.state as { resource?: { metadata?: { title?: string } } })
+            .resource?.metadata?.title;
+        return { nowPlaying: playingTitle, upcoming };
+    }
+
+    public isPaused(): boolean {
+        return this.player.state.status === AudioPlayerStatus.Paused;
     }
 
     /**
@@ -83,10 +116,11 @@ export default class AudioHandler {
             return;
         }
 
-        // Nothing left to play, disconnect
-        if (this.queue.isEmpty() && this.connection) {
-            log.debug('Queue is empty, destroying connection');
-            this.connection.destroy();
+        if (this.queue.isEmpty()) {
+            // because immediate destroy on drain creates rejoin churn between back-to-back plays
+            if (this.connection && this.connection.state.status !== Destroyed) {
+                this.armIdleTimer();
+            }
             return;
         }
 
@@ -101,6 +135,32 @@ export default class AudioHandler {
             log.error(err);
             this.queueLock = false;
             await this.playNextFromQueue();
+        }
+    }
+
+    private armIdleTimer(): void {
+        this.cancelIdleTimer();
+        log.debug(`Arming idle disconnect timer for ${this.idleTimeoutMs}ms`);
+        this.idleTimer = setTimeout(() => {
+            this.idleTimer = undefined;
+            if (
+                this.queue.isEmpty() &&
+                this.player.state.status === Idle &&
+                this.connection &&
+                this.connection.state.status !== Destroyed
+            ) {
+                log.info(`Idle for ${this.idleTimeoutMs}ms, destroying voice connection`);
+                this.connection.destroy();
+            }
+        }, this.idleTimeoutMs);
+        // because we don't want this timer to keep the process alive on shutdown
+        this.idleTimer.unref?.();
+    }
+
+    private cancelIdleTimer(): void {
+        if (this.idleTimer) {
+            clearTimeout(this.idleTimer);
+            this.idleTimer = undefined;
         }
     }
 
