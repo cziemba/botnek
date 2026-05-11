@@ -6,3 +6,5 @@ node_modules
 *.iml
 pm2.config.js
 .tsbuildinfo
+.env
+.env.*
