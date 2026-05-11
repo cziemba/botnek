@@ -1,3 +1,15 @@
+// `/sfx del <alias>` — remove an alias from the guild's sfx db AND delete the
+// underlying file. Per-guild only — the same source file can be referenced from
+// other guilds and deleting it here would break those.
+//
+// FOOTGUN: there's no shared-refcount on sfx files. Two guilds adding the same
+// YouTube URL produce identical sluggified filenames in their respective guild
+// directories (good — isolation), but if anything ever changes saveAudio to share
+// downloads across guilds, this delete becomes unsafe.
+//
+// FOOTGUN: not currently role-gated. Any guild member can /sfx del any alias —
+// see roadmap "role-gate destructive commands".
+
 import { CommandInteraction, Message } from 'discord.js';
 import fs from 'fs';
 import { isValidSfxAlias } from '../../data/types';
@@ -43,6 +55,10 @@ export async function sfxDel(
 
     const sfxPath = soundsDb.get(alias).value();
 
+    // Remove the db entry first, file second. If the rmSync below fails (permissions,
+    // file already gone) the alias is still gone from the user's perspective — no
+    // dangling "sfx with no playable file" entry. The other order would leave an
+    // orphaned db entry pointing at a deleted file.
     soundsDb.unset(alias).value();
     db.write();
 

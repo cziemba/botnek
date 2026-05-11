@@ -1,3 +1,7 @@
+// `/sfx help` — embed walkthrough of the sfx subcommands and modifier list.
+// Hand-maintained mirror of the SfxModifier enum in data/types.ts and the modifier
+// switch in sfx/common.ts — when you add a modifier, update this text too.
+
 import { ChatInputCommandInteraction, Message } from 'discord.js';
 import { BotShim } from '../../types/command';
 

@@ -1,3 +1,12 @@
+// `/sfx <subcommand>` — guild sound-effect library. Sub-handlers live under sfx/.
+// The slash and message routes both dispatch into the same per-subcommand handlers;
+// keep the dispatch table in sync between executeCommand and executeMessage when
+// adding subcommands.
+//
+// Message-route quirk: an unknown first arg falls through to sfxPlay (treating the
+// arg as an alias). That's intentional — `!sfx airhorn` is the legacy shortcut for
+// `!sfx play airhorn`.
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Command } from '../types/command';
 import { sfxAdd } from './sfx/add';

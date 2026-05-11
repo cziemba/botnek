@@ -1,3 +1,7 @@
+// `/sfx search <term>` — substring lookup over alias names. Pure-JS (no fuzzy lib);
+// good enough for the typical guild library size (<1k aliases). If libraries grow,
+// swap matchSfxAliases for a proper fuzzy matcher behind the same signature.
+
 import { ChatInputCommandInteraction, Message } from 'discord.js';
 import { LowWithLodash } from '../../data/db';
 import { GuildData } from '../../data/types';

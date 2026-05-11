@@ -1,3 +1,8 @@
+// `/sfx list` — dump the guild's full alias roster as a code-block reply.
+// Chunked 10-per-line to keep the message readable; no pagination today, so guilds
+// with several-hundred sfx will hit Discord's 2000-char message cap and get truncated
+// (see roadmap: paginated /sfx list).
+
 import { CommandInteraction, Message } from 'discord.js';
 import { BotShim } from '../../types/command';
 import { replyMaybeEphemeral } from '../queueControl';

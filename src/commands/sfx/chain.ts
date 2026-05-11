@@ -1,3 +1,7 @@
+// `/sfx chain a,b,c` — enqueue multiple sfx back-to-back as separate AudioRequests.
+// Each link goes on the queue independently, so /skip advances one link at a time and
+// /stop kills the whole chain. Modifiers per link are supported (`a#TURBO,b#BASS`).
+
 import { CommandInteraction, Message } from 'discord.js';
 import path from 'path';
 import { SfxAlias, SfxModifier } from '../../data/types.js';
@@ -40,6 +44,9 @@ export async function sfxChain(
                 }) as ProcessedSfx,
         );
 
+    // Chain length cap. Five is small but each link is a separate enqueue + potential
+    // ffmpeg shell-out for modifiers; 5 is the sweet spot between "useful for jokes"
+    // and "don't let users wedge the queue with a 50-link mega-chain".
     if (processedSfx.length > 5) {
         await replyMaybeEphemeral(
             interaction,
@@ -54,6 +61,9 @@ export async function sfxChain(
         return;
     }
 
+    // Reject the entire chain if any link is unknown — partial chains are confusing
+    // (user typed 5, hears 3) and we already paid the parse cost so error reporting
+    // is cheap. `!sfx.path` (not `!!sfx.path`) is the correct polarity here.
     const badSfxs = processedSfx.filter((sfx) => !sfx.path).map((sfx) => sfx.parsedAlias);
     if (badSfxs.length > 0) {
         log.warn(`Attempted to chain non-sfx [${badSfxs.join(',')}]`);

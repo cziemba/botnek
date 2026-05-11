@@ -1,9 +1,17 @@
+// Shared sfx machinery: alias parsing, modifier compilation into ffmpeg invocations,
+// and the alias -> path resolver. Keep the modifier switch in handleModifiers in sync
+// with the SfxModifier enum and the help text in sfx/help.ts — the three lists are
+// hand-maintained mirrors.
+
 import LocalTrack from '../../audio/tracks/localTrack';
 import { LowWithLodash } from '../../data/db';
 import { GuildData, isSfxModifier, isValidSfxAlias, SfxAlias, SfxModifier } from '../../data/types';
 import log from '../../logging/logging';
 import { ffmpegAdjustRate, ffmpegBassBoost } from '../../utils/ffmpeg';
 
+// Reserved keyword that resolves at parse-time to a randomly-picked alias from the
+// guild's sfx library. A user adding an sfx literally named "random" would clobber the
+// keyword, so it's blocked in /sfx add (RESERVED_ALIAS).
 export const RANDOM = 'random';
 
 /**
@@ -43,7 +51,10 @@ export function normalizeAliasInput(db: LowWithLodash<GuildData>, alias: string)
 }
 
 /**
- * Parse sfx alias input with modifiers e.g. 'sound#TURBO#TURBO' should parse properly into two Turbo modifiers for 'sound'.
+ * Parse 'alias#MOD1#MOD2' into the alias and a list of recognised modifiers.
+ * Unknown modifiers are silently dropped (filtered out as SfxModifier.UNKNOWN) rather
+ * than throwing, so users with typos still get the base sfx instead of an error wall.
+ * Capped at 2 modifiers to bound the ffmpeg pipeline depth.
  */
 export function parseSfxAlias(
     db: LowWithLodash<GuildData>,
@@ -74,6 +85,15 @@ export function parseSfxAlias(
     return { parsedAlias: normalizedAlias, modifiers: mods };
 }
 
+/**
+ * Compile a sfx + ordered modifier list into a LocalTrack. Each modifier shells out to
+ * ffmpeg in sequence; outputs are cached deterministically by ffmpegProcessAudio so
+ * repeat invocations of the same (alias, mod) tuple skip the shell-out entirely.
+ *
+ * Order matters: modifiers compose, not commute. SLOW#BASS sounds different from
+ * BASS#SLOW because the rate change shifts the frequencies the bass filter then
+ * targets. We honour insertion order to match what the user typed.
+ */
 export function handleModifiers(
     sfxFile: string,
     sfxAlias: string,
@@ -85,6 +105,11 @@ export function handleModifiers(
     }
     let finalPath = sfxFile;
     for (let i = 0; i < modifiers.length; i += 1) {
+        // Rate values are picked for "noticeable but still recognisable":
+        // 4/3 = +33% speed, 2 = double speed (chipmunk territory),
+        // 3/4 = -25% speed, 1/2 = half speed (Earth-rumble territory).
+        // Bass dB pairs target the (0Hz, 450Hz) gain entries — see ffmpegBassBoost.
+        // The 1000Hz entry is fixed at 0dB to leave the high-mid range alone.
         switch (String(modifiers[i])) {
             case SfxModifier.TURBO: {
                 finalPath = ffmpegAdjustRate(finalPath, guildDir, 4 / 3);

@@ -1,3 +1,7 @@
+// `/sfx play <alias>` — enqueue a single previously-added sfx, optionally with
+// modifiers (`alias#TURBO#BASS`). Modifier compilation happens via handleModifiers,
+// which may shell out to ffmpeg if the (alias, mod) tuple isn't already cached.
+
 import { CommandInteraction, Message } from 'discord.js';
 import path from 'path';
 import log from '../../logging/logging';
