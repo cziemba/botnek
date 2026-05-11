@@ -1,3 +1,6 @@
+// `/stop` — hard stop. Clears the queue AND tears down the voice connection.
+// Use `/skip` to advance past the current track without flushing what's queued behind it.
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';

@@ -1,9 +1,15 @@
+// `/queue` — read-only snapshot of the current playback state for a guild.
+// Always replies ephemerally so a curious user can poke at the queue without spamming
+// the channel.
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';
 import { BotShim, Command } from '../types/command';
 import { replyMaybeEphemeral } from './queueControl';
 
+// Cap to keep the embed under Discord's 2000-char message limit on guilds with long
+// queues; remaining count is appended as "...and N more" so the user knows it's truncated.
 const MAX_LISTED = 20;
 
 export function formatQueueMessage(snapshot: { nowPlaying?: string; upcoming: string[] }): string {

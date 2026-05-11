@@ -1,3 +1,6 @@
+// `/play <url>` and `!play <url>` — enqueue a YouTube URL for live streaming.
+// Mirror command for one-off plays; for persistent sound effects use `/sfx add`.
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import YoutubeTrack from '../audio/tracks/youtubeTrack';
@@ -48,6 +51,11 @@ export async function playClip(
         return;
     }
 
+    // Reply BEFORE the YouTube round-trip. Slash interactions have a 3-second window to
+    // get an initial response; YoutubeTrack.fromUrl can easily exceed that on a cold
+    // YouTube fetch, which would 404 the interaction token. We accept the (small) lie
+    // that the URL is queued before we've confirmed it resolves — if fromUrl throws
+    // below, the user sees an unhandled-promise log but the bot stays alive.
     await replyMaybeEphemeral(interaction, `Added ${url} to the queue`);
 
     const youtubeTrack = await YoutubeTrack.fromUrl(url);

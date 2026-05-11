@@ -1,3 +1,8 @@
+// `/skip` — advance to the next queued track. Implemented as a forced player.stop()
+// which flips the player Idle; AudioHandler's Idle stateChange handler then drains
+// the next request from the queue. If nothing's queued, the connection stays warm
+// until the idle timer fires.
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';

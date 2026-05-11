@@ -1,3 +1,7 @@
+// `/pause` — pause the current track without dropping the connection or queue.
+// `player.pause(true)` sends silence frames so Discord doesn't time the bot out of
+// the voice channel; without `true` the bot would appear "speaking" but mute.
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';

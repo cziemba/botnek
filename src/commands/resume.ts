@@ -1,3 +1,6 @@
+// `/resume` — counterpart to `/pause`. Returns false from player.unpause() if the
+// player was never paused, which we surface as "Nothing to resume."
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';
