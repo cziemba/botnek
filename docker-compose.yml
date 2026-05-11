@@ -3,16 +3,15 @@ services:
     image: ghcr.io/cziemba/botnek:latest
     container_name: botnek
     restart: unless-stopped
-    # Run as the host user that owns ./data so bind-mount writes succeed.
+    # Run as the host user that owns ~/.botnek2/data so bind-mount writes succeed.
     # Set PUID/PGID in a .env file or shell env (e.g. PUID=$(id -u) PGID=$(id -g)).
     # Defaults to the image's built-in botnek user (UID 1001).
     user: "${PUID:-1001}:${PGID:-1001}"
     volumes:
-      # Bot config (token, anthropicApiKey, dataRoot, logLevel).
-      # Set "dataRoot": "/data" inside this file so persistent state lands on the volume below.
-      - ./config.json:/config/config.json:ro
+      # Bot config (token, anthropicApiKey, logLevel).
+      - ${HOME}/.botnek2/config.json:/config/config.json:ro
       # Persistent guild state, audio + emote caches, lowdb files.
-      - ./data:/data
+      - ${HOME}/.botnek2/data:/data
     logging:
       driver: json-file
       options:
