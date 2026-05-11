@@ -11,9 +11,13 @@ import Skip from './skip';
 import Stop from './stop';
 
 /**
- * All bot commands except `/help`. The `/help` handler imports this registry
- * to build its command listing, so keeping Help out avoids a circular import
- * between `commands.ts` and `commands/help.ts`.
+ * Single source of truth for the bot's command set, MINUS `/help`. Both the dispatcher
+ * (src/commands.ts) and the help-embed builder (src/commands/help.ts) read from here, so
+ * adding a new user-facing command is a one-line addition to this array — no need to also
+ * remember to edit a separate help listing the way the pre-cleanup version required.
+ *
+ * `/help` itself is appended in src/commands.ts to avoid a circular import: help.ts imports
+ * COMMAND_REGISTRY to render its listing.
  */
 export const COMMAND_REGISTRY: Command[] = [
     Sfx,
