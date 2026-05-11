@@ -1,3 +1,9 @@
+// Per-guild lowdb wrapper for the alias→Emote map. The on-disk shape is
+// `emoteConfig.emotes[alias] = Emote`; this class exists to (a) lazily seed the nested path on
+// first write so callers don't have to defensively chain `?.`s, and (b) keep all the lodash
+// `chain` boilerplate in one place. The cached gif files live OUTSIDE this manager — in
+// `${dataRoot}/emotes/<id>.gif`, shared across guilds — so `remove` here is purely a metadata
+// op and never touches disk. See EmoteGateway for the cache lifecycle.
 import { LowWithLodash } from './db';
 import { GuildData } from './types';
 import { Emote, EmoteAlias } from './types/emote';
@@ -5,14 +11,14 @@ import { Emote, EmoteAlias } from './types/emote';
 const EMOTE_CONFIG = 'emoteConfig';
 const EMOTES = 'emotes';
 
-/**
- * Manages the EmoteConfig object and abstracts away interactions with the database layer
- */
 export default class EmoteConfigManager {
     public db: LowWithLodash<GuildData>;
 
     public constructor(db: LowWithLodash<GuildData>) {
         this.db = db;
+        // Two-step seed (parent then child) because `db.chain.get('emoteConfig.emotes')` returns
+        // undefined for either missing parent OR missing child, and we need to materialize them
+        // separately to avoid clobbering an existing `emoteConfig` that has other future keys.
         if (!this.db.chain.get(EMOTE_CONFIG).value()) {
             this.db.chain.set(EMOTE_CONFIG, {}).commit();
             this.db.write();
