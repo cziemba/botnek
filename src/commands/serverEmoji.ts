@@ -1,3 +1,10 @@
+// `/emoji add`: promote a 7TV/BTTV emote to a real Discord server custom emoji via
+// `guild.emojis.create`. The fetch pipeline is shared with `/emote`, but the upload target is
+// constrained: Discord enforces a 256KiB hard cap on custom emoji files (animated and static
+// alike) and a per-guild emoji slot count. We can't pre-check the size accurately because the
+// cached gif was sized for webhook attachments (no upper bound), so the strategy is "try once at
+// the standard size, on failure re-encode at 64x64 and retry." A second failure is reported back
+// as a user-facing error.
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message } from 'discord.js';
 import os from 'os';
@@ -37,11 +44,18 @@ async function addEmoji(
     try {
         await emojiManager.create({ attachment: emoteFilePath, name: alias });
     } catch (e1) {
+        // First failure is overwhelmingly "asset over 256KiB" (Discord's emoji size cap), but we
+        // can't read the error category cleanly so we retry on every failure. The shrunk version
+        // goes to os.tmpdir() rather than the persistent emote cache because it's specific to
+        // server-emoji upload — the webhook send path still uses the full-size cached gif and we
+        // don't want this branch to silently degrade `/emote` rendering by overwriting the cache.
         log.warn(e1, 'There was a problem setting emoji. Trying one more time with reduced size.');
         const tmpFile = path.resolve(os.tmpdir(), `${emote.id}-shrunk.gif`);
         const delay = await extractFrameDelay(emoteFilePath);
+        // 64x64 is roughly Discord's reaction-picker render size; below this the emoji is
+        // unrecognizable. If even this fails the source is too detail-dense to compress further
+        // without ImageMagick `-quality` knobs we don't currently expose.
         await convertToGif(emoteFilePath, tmpFile, delay, '64x64^');
-        // Try one more time!
         try {
             await emojiManager.create({ attachment: tmpFile, name: alias });
         } catch (e2) {
