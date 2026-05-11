@@ -1,6 +1,7 @@
 # botnek2
 
 [![CI](https://github.com/cziemba/botnek/actions/workflows/ci.yml/badge.svg?branch=mainline)](https://github.com/cziemba/botnek/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/cziemba/botnek?label=ghcr.io&color=blue&logo=docker)](https://github.com/cziemba/botnek/pkgs/container/botnek)
 
 A single-process Node Discord bot (ESM, TypeScript, Node ≥22) built on `discord.js` v14 and `@discordjs/voice`. Provides per-guild sound effects, YouTube playback, 7TV/BTTV emote rendering through channel webhooks, and a Claude (`@anthropic-ai/sdk`) chat passthrough. Commands are exposed both as Discord slash commands and `!`-prefix message commands.
 
