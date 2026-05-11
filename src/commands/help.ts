@@ -1,12 +1,20 @@
+// `/help` and the embed builder shared with the bot-managed `#botnek2-help` channel. The
+// embed is rebuilt fresh on every call so additions to COMMAND_REGISTRY surface here without
+// any extra wiring — the registry is the single source of truth (see commands/registry.ts).
+
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChatInputCommandInteraction, Message, SharedSlashCommand } from 'discord.js';
 import { Command } from '../types/command';
 import { COMMAND_REGISTRY } from './registry';
 
 /**
- * Exported for use in the bot news channel.
+ * Exported separately from the slash handler because src/bot.ts also calls it on
+ * `clientReady` to (re)post the embed in the per-guild help channel. Keeping these two
+ * surfaces sharing one builder means the channel never drifts from `/help`.
  */
 export const helpMsgOptions = () => {
+    // Hide commands without helpText (e.g. `/help` itself, to avoid recursion). This is the
+    // hook for marking a command "internal" — leave helpText off and it won't show.
     const cmds = COMMAND_REGISTRY.filter((c) => c.helpText);
 
     const cmdToMd = (cmd: SharedSlashCommand, helpText?: string) => ({
