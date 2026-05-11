@@ -39,7 +39,17 @@ Logs are capped at 5 × 10 MB rolling files (50 MB total) by the `--log-opt` fla
 
 ### Using compose instead
 
-If you'd rather manage the bot declaratively, the repo ships a [`docker-compose.yml`](docker-compose.yml) that mounts `~/.botnek2/{config.json,data}` regardless of where you put the file. Save it anywhere, write a `.env` alongside it with `PUID=$(id -u)` and `PGID=$(id -g)`, then `docker compose up -d`.
+If you'd rather manage the bot declaratively, the repo ships a [`docker-compose.yml`](docker-compose.yml) that mounts `~/.botnek2/{config.json,data}` regardless of where you put the file:
+
+```sh
+mkdir -p ~/.botnek2/data && cd ~/.botnek2
+nano config.json   # set your token (see Configuration below)
+curl -O https://raw.githubusercontent.com/cziemba/botnek/main/docker-compose.yml
+printf 'PUID=%s\nPGID=%s\n' "$(id -u)" "$(id -g)" > .env
+docker compose up -d
+```
+
+After that: `docker compose logs -f`, `docker compose restart`, `docker compose pull && docker compose up -d` to upgrade.
 
 ## Configuration
 
