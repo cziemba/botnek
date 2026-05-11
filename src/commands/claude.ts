@@ -1,16 +1,26 @@
+// `/claude` — Anthropic SDK passthrough that replaced the deprecated reverse-engineered
+// `chatgpt` package. Conversation state is keyed PER GUILD via `bot.claudeConversations`
+// (a GuildResource), NOT at module scope — the predecessor `chatgpt.ts` violated this and
+// every guild ended up sharing a single rolling conversation. The only module-scope state
+// here is `cachedClient`, which is intentional: it's a stateless API client tied to the
+// bot's single anthropicApiKey, not to any guild's conversation.
+
 import Anthropic from '@anthropic-ai/sdk';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Attachment, ChatInputCommandInteraction, CommandInteraction, Message } from 'discord.js';
 import log from '../logging/logging';
 import { BotShim, Command } from '../types/command';
 
-// Idle TTL: any guild conversation with no activity for this long is wiped on next call.
+// Conversation expires after this much idle time. Pulled forward on every successful turn,
+// so an active back-and-forth never times out mid-thread.
 const CONVERSATION_TTL_MS = 5 * 60 * 1000;
 const DISCORD_MAX_MESSAGE_LENGTH = 2000;
 const DEFAULT_MODEL_ALIAS: ModelAlias = 'opus';
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const MAX_TOKENS = 4096;
 
+// Aliases shown in the slash-option dropdown -> exact model IDs. Keep the alias surface
+// stable even when bumping point releases — users build muscle memory on the short names.
 const MODEL_BY_ALIAS = {
     opus: 'claude-opus-4-7',
     sonnet: 'claude-sonnet-4-6',
@@ -28,6 +38,10 @@ export interface ClaudeConversation {
     systemPrompt?: string;
 }
 
+// Module-scope client cache. Safe because the Anthropic SDK client is stateless w.r.t. the
+// caller's identity — only the apiKey matters, and bot.config.anthropicApiKey is fixed for
+// the process lifetime. The `cachedApiKey` check exists so a future hot-reload of config
+// would still rebuild the client.
 let cachedClient: Anthropic | null = null;
 let cachedApiKey: string | null = null;
 
@@ -39,6 +53,10 @@ function getClient(apiKey: string): Anthropic {
     return cachedClient;
 }
 
+// Returns the live conversation if it's still within TTL, otherwise resets the message
+// history while preserving the guild's configured systemPrompt. systemPrompt survives TTL
+// expiry because it's user-configured server-flavor text — wiping it on every idle timeout
+// would surprise admins.
 function getOrResetConversation(bot: BotShim, guildId: string): ClaudeConversation {
     const conversations = bot.claudeConversations;
     if (conversations.has(guildId)) {
@@ -57,6 +75,9 @@ function getOrResetConversation(bot: BotShim, guildId: string): ClaudeConversati
     return fresh;
 }
 
+// Discord caps individual messages at 2000 chars. Prefer breaking on a newline to avoid
+// splitting mid-word / mid-code-block; fall back to a hard cut if there's no newline in
+// range. Exported for the colocated tests.
 export function chunkForDiscord(text: string): string[] {
     const chunks: string[] = [];
     let remaining = text;
@@ -70,6 +91,9 @@ export function chunkForDiscord(text: string): string[] {
     return chunks;
 }
 
+// Reply path is split because slash interactions and prefix messages have different surfaces:
+// slash uses reply/editReply/followUp on a 15-min interaction token (and we may have already
+// deferReply'd above), prefix uses a normal channel.send for everything past the first reply.
 async function sendChunks(
     interaction: CommandInteraction<'cached'> | Message<true>,
     chunks: string[],
@@ -99,6 +123,9 @@ export function errorMessage(e: unknown): string {
     return 'unknown error';
 }
 
+// Effort -> thinking-config mapping. `low` returns undefined (no `thinking` field at all,
+// for cheapest/fastest replies); `medium` uses `adaptive` so the model picks a budget per
+// query; `high`/`max` pin explicit budgets when the user wants a hard floor on reasoning.
 function thinkingFor(effort: EffortLevel): Anthropic.ThinkingConfigParam | undefined {
     switch (effort) {
         case 'low':
@@ -112,6 +139,10 @@ function thinkingFor(effort: EffortLevel): Anthropic.ThinkingConfigParam | undef
     }
 }
 
+// Pass image attachments to Claude as URL-source blocks (not bytes) — the Anthropic SDK
+// fetches them server-side, which is faster than us round-tripping the gif through Node and
+// uploading bytes. We filter on contentType so non-image attachments (audio, pdf, etc.)
+// don't get sent as broken image references.
 function imageBlocksFromAttachments(attachments: Attachment[]): Anthropic.ImageBlockParam[] {
     return attachments
         .filter((a) => a.contentType && IMAGE_MIME_TYPES.has(a.contentType))
@@ -150,6 +181,8 @@ async function claudeChat(
     }
 
     if (interaction instanceof CommandInteraction) {
+        // Defer up front so the 3-second interaction-ack window doesn't expire while the API
+        // call is in flight. Subsequent sendChunks will see deferred=true and editReply.
         await interaction.deferReply();
     }
 
@@ -162,8 +195,9 @@ async function claudeChat(
     const modelId = MODEL_BY_ALIAS[opts.modelAlias ?? DEFAULT_MODEL_ALIAS];
     const thinking = thinkingFor(opts.effort ?? DEFAULT_EFFORT);
 
-    // ephemeral cache_control on the system block makes prompt-cache hits real
-    // for repeat calls within the cache window (~5 min).
+    // Mark the system block ephemeral-cacheable so repeat /claude calls within ~5 minutes
+    // hit the prompt cache instead of re-billing the system tokens. Only meaningful when a
+    // systemPrompt is configured — without one there's no stable prefix to cache.
     let system: Anthropic.TextBlockParam[] | undefined;
     if (conversation.systemPrompt) {
         system = [
@@ -184,6 +218,8 @@ async function claudeChat(
             messages: conversation.messages,
         });
 
+        // Log usage at debug so it's easy to grep for cache_read_input_tokens > 0 to verify
+        // the ephemeral system-prompt cache is actually hitting.
         const usage = response.usage;
         log.debug(
             {
@@ -212,6 +248,8 @@ async function claudeChat(
         await sendChunks(interaction, chunkForDiscord(text));
     } catch (e) {
         log.error({ err: e }, 'Claude API call failed');
+        // Roll the failed user turn back out of the conversation so the next attempt isn't
+        // pre-poisoned with a dangling user message that has no assistant reply.
         conversation.messages.pop();
         await sendChunks(interaction, [`Something went wrong: ${errorMessage(e)}`]);
     }
@@ -227,6 +265,11 @@ function parseEffort(value: string | null): EffortLevel | undefined {
     return undefined;
 }
 
+// Pull image attachments from both the message itself AND any message it's replying to —
+// Discord delivers `reference.messageId` for replies, and the natural ergonomic move (reply
+// to a screenshot, then `!claude what is this`) needs the referenced attachment to flow
+// through. Falls back to the message cache; uncached older replies will simply have no
+// referenced images attached.
 function imagesFromMessage(message: Message<true>): Anthropic.ImageBlockParam[] {
     const own = imageBlocksFromAttachments([...message.attachments.values()]);
     const referencedId = message.reference?.messageId;
@@ -258,6 +301,8 @@ async function handleReset(
     const conversations = bot.claudeConversations;
     const { guildId } = interaction;
     if (conversations.has(guildId)) {
+        // Replace, don't mutate-in-place: the existing object's expiry would otherwise
+        // outlive its now-empty messages array, which is harmless but confusing.
         const existing = conversations.get(guildId);
         conversations.put(guildId, {
             messages: [],
@@ -275,6 +320,8 @@ async function handleSystem(
     const prompt = interaction.options.getString('prompt', true);
     const conversations = bot.claudeConversations;
     const { guildId } = interaction;
+    // Sentinel value `clear` (case-insensitive) instead of a separate /claude system clear
+    // subcommand — keeps the slash schema flat and matches what users will guess to type.
     if (prompt.trim().toLowerCase() === 'clear') {
         if (conversations.has(guildId)) {
             const existing = conversations.get(guildId);
@@ -371,6 +418,8 @@ const Claude: Command = {
             await handleSystem(bot, interaction);
         }
     },
+    // The prefix path collapses everything except `reset` into an `ask` — there's no
+    // ergonomic prefix syntax for the model/effort options, so they're slash-only by design.
     executeMessage: async (bot, message, args) => {
         if (args[0] === 'reset') {
             const conversations = bot.claudeConversations;

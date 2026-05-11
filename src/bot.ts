@@ -1,3 +1,11 @@
+// Botnek wires up the discord.js Client, owns the per-guild AudioHandler / GuildDatabase /
+// ClaudeConversation maps via the BotShim it threads through every handler, and dispatches both
+// slash and prefix commands. Per-guild isolation is load-bearing: never store mutable
+// command state at module scope keyed implicitly by the current interaction. (See
+// docs/staleness.md — `chatgpt.ts` was the historical violator; `claude.ts` keeps state in
+// `BotShim.claudeConversations` keyed by guildId.) Emote gateways are constructed once here
+// and shared across all guilds — they're stateless lookups against an external API.
+
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import {
@@ -32,10 +40,6 @@ import GuildResource from './types/guildResource';
 
 const DB_FILE: string = 'db.json';
 
-/**
- * Represents the Botnek Discord bot.
- * @class
- */
 export default class Botnek {
     private readonly client: Client;
 
@@ -52,21 +56,23 @@ export default class Botnek {
         bttvGateway: BetterTTVEmoteGateway;
     };
 
-    /**
-     * Creates an instance of Botnek.
-     * @constructor
-     * @param {BotnekConfig} config - The configuration for Botnek.
-     */
     constructor(config: BotnekConfig) {
         this.audioHandlers = new GuildResource<AudioHandler>();
         this.databases = new GuildResource<GuildDatabase>();
         this.claudeConversations = new GuildResource<ClaudeConversation>();
         this.config = config;
+        // Gateways are external API clients with no mutable state; one shared pair is enough for
+        // every guild. Constructing them per-handler-invocation (the historical pattern) was
+        // wasteful with no isolation benefit.
         this.emoteGateways = {
             sevenTvGateway: new SevenTVEmoteGateway(config),
             bttvGateway: new BetterTTVEmoteGateway(config),
         };
 
+        // Intent set is the minimum needed: Guilds for cache/lifecycle, GuildVoiceStates so
+        // joinVoiceChannel works, GuildMessages + MessageContent for the `!`-prefix and bare
+        // emote-alias paths. MessageContent is a privileged intent and must be enabled in the
+        // Discord developer portal.
         this.client = new Client({
             intents: [
                 GatewayIntentBits.Guilds,
@@ -76,6 +82,9 @@ export default class Botnek {
             ],
         });
 
+        // clientReady fires once after gateway connect + initial guild cache hydrate. We do all
+        // per-guild bootstrap (resource init, command publish, help-channel upsert) here so that
+        // by the time interactionCreate fires, every guild already has its AudioHandler / db.
         this.client.once('clientReady', async () => {
             if (!this.client.user || !this.client.application) {
                 return;
@@ -85,17 +94,23 @@ export default class Botnek {
             const guilds = Array.from(this.client.guilds.cache.values());
 
             if (guilds.length === 0) {
+                // The bot is guild-scoped — without a guild we have nowhere to register
+                // commands and nothing to do. Fail loudly rather than idle silently.
                 throw new Error("I'm not in any guilds!, Exiting.");
             }
 
             const rest = new REST({ version: '10' }).setToken(config.token);
 
-            // Set any bot-level commands that don't require guild info/presence.
+            // Wipe global application commands on every boot. We publish per-guild below
+            // (zero propagation delay vs. ~1 hour for global), and any leftover global
+            // registrations would show up as duplicate entries in user pickers.
             await rest.put(Routes.applicationCommands(clientId), {
                 body: [],
             });
 
-            // Init commands/db for each guild
+            // Publish commands and stand up resources for every guild concurrently. Each
+            // guild's REST PUT is independent; serializing would multiply boot time by
+            // guild-count for no benefit.
             await Promise.all(
                 guilds.map(async (g) => {
                     log.info(
@@ -113,8 +128,11 @@ export default class Botnek {
             );
         });
 
-        // Register the slash command handler and routing logic.
+        // Slash command dispatch. Looks up by exact name in the COMMANDS array — adding a new
+        // slash command is a one-line registration in src/commands/registry.ts.
         this.client.on('interactionCreate', async (interaction: Interaction<CacheType>) => {
+            // Bail on autocomplete, buttons, modals, and uncached guilds — only ChatInput
+            // command interactions for guilds we've already initialized are dispatched.
             if (!interaction.isCommand() || !interaction.inCachedGuild()) return;
 
             log.info(`${interaction.commandName} command received!`);
@@ -131,10 +149,15 @@ export default class Botnek {
             await slashCommand.executeCommand(this.makeBotShim(), interaction);
         });
 
-        // Register the prefix command handler and routing logic.
+        // Prefix-command + bare-emote-alias dispatch. Two paths share this listener because both
+        // are MESSAGE_CREATE-driven and we want them consistent (DM-rejection, bot-ignore).
         this.client.on('messageCreate', async (message: Message) => {
+            // Drop bot messages (no echo loops) and DMs (the bot is guild-scoped — without a
+            // guildId there's no per-guild resource to look up).
             if (message.author.bot || !message.inGuild()) return;
-            // First assume the message is an emote.
+            // Anything that's not an explicit `!`-prefix command might still be a bare emote
+            // alias (e.g. typing `pepega` in a channel auto-replaces with the gif via webhook).
+            // Try the emote path first; tryHandleEmote no-ops if no aliases match.
             if (!message.content.startsWith('!')) {
                 await this.tryHandleEmote(message);
                 return;
@@ -144,10 +167,15 @@ export default class Botnek {
 
             const prefixCommand = COMMANDS.find((c) => c.data.name === cmdArgs[0]);
             if (!prefixCommand) {
+                // Unknown `!`-prefix message — silently ignore. Replying would spam channels
+                // any time someone uses `!` for non-bot purposes.
                 log.info(`Ignoring unknown cmd ${cmdArgs[0]}`);
                 return;
             }
 
+            // Slash commands enforce the voice-channel requirement inside their handler (so
+            // they can use ephemeral replies). The prefix path enforces it here so handlers
+            // don't have to repeat themselves.
             if (prefixCommand.requireUserInChannel && !message.member?.voice.channel) {
                 await message.reply({
                     content: 'You must join a voice channel before sending a command',
@@ -158,6 +186,8 @@ export default class Botnek {
             try {
                 await prefixCommand.executeMessage(this.makeBotShim(), message, cmdArgs.slice(1));
             } catch (e) {
+                // Prefix path has no built-in error surfacing (no deferReply / followUp); we
+                // catch and reply ourselves so failures aren't silently swallowed.
                 await message.reply({
                     content: `An error occurred ${e}`,
                 });
@@ -165,6 +195,9 @@ export default class Botnek {
         });
     }
 
+    // Bare-emote auto-replace path: scan message content for any tokens that match a configured
+    // emote alias, then delegate to `handleEmotes` which deletes the original message and
+    // reposts via the channel's webhook with the cached gif(s) attached.
     private async tryHandleEmote(message: Message<true>): Promise<void> {
         const manager = new EmoteConfigManager(this.databases.get(message.guildId).db);
         const aliases = findEmoteAliases(message.content, manager);
@@ -172,6 +205,9 @@ export default class Botnek {
         await handleEmotes(this.makeBotShim(), message, resolveEmoteAliases(aliases, manager));
     }
 
+    // Build the dependency bag handed to every command handler. A fresh literal per dispatch
+    // (rather than a cached field) keeps the shape obvious at the call site — adding a new
+    // dependency means editing this method, the BotShim interface, and nothing else.
     private makeBotShim() {
         return {
             client: this.client,
@@ -183,11 +219,9 @@ export default class Botnek {
         };
     }
 
-    /**
-     * Initializes the help channel for Botnek.
-     * @private
-     * @returns {Promise<void>} - A Promise that resolves when the help channel is initialized.
-     */
+    // Stand up (or refresh permissions on) the `#botnek2-help` channel and post the current
+    // help embed there. Idempotent so it's safe to run on every clientReady — the embed is
+    // edited in place if a previous bot message exists, or freshly posted otherwise.
     private async initHelpChannel(guild: Guild): Promise<void> {
         const botnekHelpName = 'botnek2-help';
         let botnekHelpChannel = guild.channels.cache
@@ -195,6 +229,9 @@ export default class Botnek {
             .map((c) => c as TextChannel)
             .find((c) => c.name === botnekHelpName);
 
+        // Lock the channel down so users can't talk in it (the bot owns the only message).
+        // Bot must explicitly grant itself SendMessages because the @everyone deny would
+        // otherwise apply to it as well via role inheritance.
         const helpChannelPermissions: OverwriteResolvable[] = [
             {
                 id: guild.roles.everyone,
@@ -238,7 +275,9 @@ export default class Botnek {
             .sort((m) => m.createdTimestamp)
             .findLast((m) => m?.author.id === this.client.user?.id);
 
-        // Delete all other messages in help channel.
+        // Garbage-collect any stray non-bot messages so the channel always has exactly one
+        // message: the current help embed. Important: a server admin could have pinned junk in
+        // here, and we want this channel to be cosmetically clean.
         await Promise.all(
             helpChannelMsgs.filter((m) => m.id !== botMsg?.id).map((m) => m.delete()),
         );
@@ -248,23 +287,22 @@ export default class Botnek {
             await botnekHelpChannel.send(helpMsgOptions() as MessageCreateOptions);
             return;
         }
+        // Edit-in-place rather than delete + repost so the message permalink stays stable for
+        // anyone who's pinned a link to it.
         log.info('Updating the help text');
         await botMsg.edit(helpMsgOptions() as MessageEditOptions);
     }
 
-    /**
-     * Initializes guild-specific resources for Botnek, such as settings and data, for a given guild ID.
-     *
-     * @param {string} guildId - The ID of the guild for which to initialize resources.
-     * @param {string} dataRoot - The root directory path where guild-specific data is stored.
-     * @returns {Promise<void>} - A Promise that resolves when the guild resources are initialized.
-     */
+    // Idempotent per-guild setup. Called from clientReady for known guilds, but kept idempotent
+    // so a future "guildCreate" handler (or a manual late-join) could call it without coordinating
+    // with the boot path. Synchronous for simplicity — file IO is small and one-shot.
     private initGuildResources(guildId: string, dataRoot: string) {
-        // Exit early if resources are already initialized
         if (this.audioHandlers.has(guildId) && this.databases.has(guildId)) {
             return;
         }
 
+        // Per-guild data sits in `${dataRoot}/${guildId}/`. mkdirSync with recursive is safe
+        // even if dataRoot itself doesn't exist yet (first run on a fresh host).
         const guildDbPath = path.resolve(`${dataRoot}/${guildId}`);
         fs.mkdirSync(guildDbPath, { recursive: true });
 
@@ -279,6 +317,9 @@ export default class Botnek {
         log.debug('Logged in!');
     }
 
+    // Best-effort graceful teardown. Stop voice connections first (otherwise discord.js's
+    // destroy will leave them dangling for ~30s of UDP timeout), then tear down the gateway.
+    // lowdb writes are synchronous so they're already on disk by the time we get here.
     public async shutdown(): Promise<void> {
         log.info('Shutting down...');
         for (const handler of this.audioHandlers.values()) {

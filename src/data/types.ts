@@ -1,14 +1,21 @@
+// Per-guild lowdb schema. Any shape change here is a silent breaking change for existing
+// guilds — there is no migration framework today, so old `db.json` files just deserialize
+// with missing fields. Either default-fill in code or add a schemaVersion field before
+// reshaping these types in production.
+
 import { Snowflake } from 'discord-api-types/globals';
 import { EmoteConfig } from './types/emote';
 
 /**
- * SfxAlias w/ auxiliary type union to ensure strings are not accepted in place.
+ * Branded alias type. The brand is only enforced by the `isValidSfxAlias` type guard below —
+ * if you cast or non-null-assert your way around the guard, TypeScript will not catch it and
+ * you'll let untrusted user input flow into places that assume the regex has held.
  */
 export type SfxAlias = string & { __validSfxAlias: true };
 
 /**
- * Sfx Alias type check and casting; alphanumeric only.
- * @param alias alias to check.
+ * Lowercase alphanumeric, 1-20 chars. Tight enough to be safe to interpolate into shell
+ * commands (see src/utils/ffmpeg.ts) and into filesystem paths without escaping.
  */
 export function isValidSfxAlias(alias: string): alias is SfxAlias {
     const re = /^[a-z0-9]{1,20}$/;
@@ -16,7 +23,9 @@ export function isValidSfxAlias(alias: string): alias is SfxAlias {
 }
 
 /**
- * Supported sfx mods
+ * Modifier suffixes parsed from `alias#MOD#MOD` syntax in `/sfx play`. Mapped to ffmpeg
+ * filter chains in src/utils/ffmpeg.ts. Adding a new modifier = enum entry here + handler in
+ * src/commands/sfx/common.ts#handleModifiers.
  */
 export enum SfxModifier {
     'UNKNOWN' = 'UNKNOWN',
@@ -29,8 +38,8 @@ export enum SfxModifier {
 }
 
 /**
- * Type check and conversion for potential sfx modifiers.
- * @param modifier modifier to check/cast.
+ * Returns SfxModifier.UNKNOWN (rather than throwing or returning undefined) for unrecognized
+ * input so callers can filter the unknowns out without try/catch noise.
  */
 export function isSfxModifier(modifier: string): SfxModifier {
     const upperModifier = modifier.toUpperCase();
@@ -41,14 +50,21 @@ export function isSfxModifier(modifier: string): SfxModifier {
 }
 
 /**
- * Sound effects: key/value pairs of alias to sound file
+ * `sounds[alias]` is the absolute path to the BASE (unmodified) mp3. Modifier variants live
+ * as sibling files in `${guildDir}/ffmpeg/` and are not tracked in the db — they're a pure
+ * regen cache, safe to delete.
  */
 export type SfxConfig = {
     sounds: { [key: SfxAlias]: string };
 };
 
 /**
- * Webhooks: registered webhooks are identified by channel id
+ * Webhooks created by `/emote enable` for the bot's webhook-impersonation send path. Token is
+ * stored plaintext on purpose — that's what lets the bot send through the hook from any
+ * process after a restart. Keep `db.json` off shared filesystems for this reason.
+ *
+ * Array-of-hooks-per-channel is future-proofing; today only `EMOTE_HOOK_NAME` ('emojiHook')
+ * is ever stored or looked up.
  */
 export type WebhookConfig = {
     [channel: Snowflake]: {
@@ -58,16 +74,14 @@ export type WebhookConfig = {
     }[];
 };
 
-/**
- * Model for the per guild database
- */
 export type GuildData = {
     sfx: SfxConfig;
     webhooks: WebhookConfig;
     emoteConfig: EmoteConfig;
 };
 
-// Base set of data for a guild, set on init.
+// Seeded into a fresh db.json on first boot. Keep all top-level fields populated with their
+// empty containers — code paths assume `db.data.sfx.sounds` etc. exist without nullable checks.
 export const DEFAULT_GUILD_DATA: GuildData = {
     sfx: {
         sounds: {},
