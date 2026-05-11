@@ -1,3 +1,7 @@
+// `/emote` slash + `!emote` prefix command surface: enable per-channel webhook impersonation,
+// add/remove aliases in the guild's lowdb, and dump the alias listing. The actual on-message
+// alias replacement lives in `./emotes/emote.ts` (handleEmotes) — this file is purely the CRUD
+// surface around that pipeline.
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction, Message, TextChannel, Webhook } from 'discord.js';
 import { LowWithLodash } from '../data/db';
@@ -7,9 +11,13 @@ import { Emote, EmoteSource, isEmoteAlias } from '../data/types/emote';
 import log from '../logging/logging';
 import { BotShim, Command } from '../types/command';
 
-// Discord's hard cap is 2000; leave headroom for trailing newlines / chunk boundaries.
+// Discord's per-message hard cap is 2000 chars; leave headroom for trailing newlines and the chunk
+// boundary itself so a long URL on the last line of a chunk can't push us over.
 const MAX_CHUNK_LEN = 1900;
 
+// Stored in lowdb under `webhooks[channelId][].hookName`; also used as the Discord-side webhook
+// display name when we create one. Stable string — changing it would orphan every existing channel
+// registration because the lookup is by exact-match.
 export const EMOTE_HOOK_NAME: string = 'emojiHook';
 
 function webhookDb(db: LowWithLodash<GuildData>) {
@@ -43,6 +51,12 @@ export async function tryRegisterEmoteHook(
         db.data!.webhooks[channelId] = [];
     }
 
+    // We persist {id, token} rather than the Webhook object itself so the inline-emote handler can
+    // construct a WebhookClient from cold without a Discord API round-trip. The token is on a per-
+    // webhook basis, has no expiry, and is revoked only when the webhook is deleted (which we
+    // don't currently detect — a manually-deleted webhook stays in lowdb forever and the next
+    // emote send will silently 404; symptom is "emote stopped working" and the fix is `/emote
+    // enable` again).
     const webhook: Webhook = await (channel as TextChannel).createWebhook({
         name: EMOTE_HOOK_NAME,
     });
@@ -128,6 +142,10 @@ async function addEmote(
         }
     }
 
+    // Try every gateway and use whichever recognized the URL. There is no central URL router
+    // because the per-source URL formats are too divergent to share a regex without making each
+    // gateway harder to read in isolation. If both match (shouldn't happen — the host names are
+    // disjoint) the 7TV path wins because its block runs second and overwrites `emote`.
     let emote;
     const bttvId = client.emoteGateways.bttvGateway.tryParseUrl(props.url);
     const sevenTvId = client.emoteGateways.sevenTvGateway.tryParseUrl(props.url);
@@ -144,6 +162,10 @@ async function addEmote(
         throw new Error(`Could not fetch emote for url ${props.url}`);
     }
 
+    // Default to the upstream display name as the alias when the user didn't pick one. This is
+    // also subject to the alias charset (`isEmoteAlias`) — some 7TV emotes have characters that
+    // wouldn't pass the regex (spaces, unicode), in which case the user MUST supply an explicit
+    // alias.
     const alias = props.alias || emote.defaultAlias;
     if (!isEmoteAlias(alias)) {
         await interaction.reply(`Invalid characters in alias: \`${alias}\``);
@@ -173,6 +195,11 @@ async function removeEmote(
         return;
     }
 
+    // Removes the alias→emote mapping from this guild's lowdb only. The cached gif at
+    // `${dataRoot}/emotes/<id>.gif` is intentionally NOT deleted because the same id may still be
+    // aliased in OTHER guilds (the cache is process-global). Today there is no GC that walks
+    // every guild's db to compute the orphan set, so removed-everywhere emotes accumulate on
+    // disk indefinitely.
     emoteConfigManager.remove(alias);
     await interaction.reply({
         content: `Removed ${alias}`,
