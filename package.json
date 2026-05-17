@@ -1,6 +1,6 @@
 {
   "name": "botnek2",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -27,6 +27,7 @@
     "@anthropic-ai/sdk": "^0.95.1",
     "@distube/ytdl-core": "^4.15.1",
     "bufferutil": "^4.0.7",
+    "discord-api-types": "^0.38.0",
     "discord.js": "^14.9.0",
     "erlpack": "github:discord/erlpack",
     "express-graphql": "^0.12.0",
@@ -57,7 +58,6 @@
     "@types/lowdb": "^1.0.15",
     "@types/node": "^24.12.3",
     "@typescript-eslint/parser": "^8.59.2",
-    "discord-api-types": "^0.38.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "github:abrahamguo/eslint-config-prettier",
     "eslint-import-resolver-typescript": "^4.0.0",
