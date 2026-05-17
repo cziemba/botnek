@@ -13,8 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Activate pnpm via corepack. The version is pinned by the `packageManager` field
+# in package.json, so this Dockerfile doesn't need to track pnpm releases.
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
 # Runtime stage.
 FROM node:22-bookworm-slim AS runtime

@@ -86,19 +86,21 @@ Requires Node ≥22 and the following binaries on `$PATH` (shelled out, not pull
 - ImageMagick — `convert` and `identify`
 - `file`
 
+The repo is pinned to pnpm 11 via the `packageManager` field in `package.json`. Enable corepack once (`corepack enable`) and pnpm will self-bootstrap to the correct version. pnpm 11 quarantines releases newer than 7 days (`minimumReleaseAge` in `pnpm-workspace.yaml`) and only runs install scripts for packages on the `allowBuilds` list — both are supply-chain guardrails, not optional knobs.
+
 ```sh
-npm install
-npm test            # vitest run; *.integration.test.ts hits the network (YouTube)
-npm start           # ts-node + pino-pretty; data → ~/.botnek2/data
+pnpm install
+pnpm test           # vitest run; *.integration.test.ts hits the network (YouTube)
+pnpm start          # ts-node + pino-pretty; data → ~/.botnek2/data
 ```
 
 Other useful scripts:
 
 ```sh
-npm run build              # tsc --build (type-check, no emit)
-npm run lint[:fix]
-npm run prettier[:fix]
-npm run redeploy           # pm2 restart botnek2 (production)
+pnpm run build             # tsc --build (type-check, no emit)
+pnpm run lint[:fix]
+pnpm run prettier[:fix]
+pnpm run redeploy          # pm2 restart botnek2 (production)
 ```
 
 ## Releasing

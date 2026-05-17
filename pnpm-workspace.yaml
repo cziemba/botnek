@@ -1,0 +1,13 @@
+minimumReleaseAge: 10080
+
+allowBuilds:
+  '@discordjs/opus': true
+  '@ffprobe-installer/linux-x64': true
+  '@swc/core': true
+  bufferutil: true
+  erlpack: true
+  unrs-resolver: true
+  zlib-sync: true
+
+overrides:
+  tar: ^7.5.15

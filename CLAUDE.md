@@ -17,15 +17,20 @@ Commands are registered both as Discord slash commands **and** as `!`-prefix mes
 ## Run / dev
 
 ```
-npm start                 # ts-node + pino-pretty, reads ~/.botnek2/config.json (override via $BOTNEK_CONFIG)
-npm test                  # vitest run; *.integration.test.ts hits the network (YouTube)
-npm run lint[:fix]
-npm run prettier[:fix]
-npm run build             # tsc --build (noEmit — type-check only)
-npm run redeploy          # pm2 restart botnek2 (production)
+pnpm start                # ts-node + pino-pretty, reads ~/.botnek2/config.json (override via $BOTNEK_CONFIG)
+pnpm test                 # vitest run; *.integration.test.ts hits the network (YouTube)
+pnpm run lint[:fix]
+pnpm run prettier[:fix]
+pnpm run build            # tsc --build (noEmit — type-check only)
+pnpm run redeploy         # pm2 restart botnek2 (production)
 ```
 
-Runtime system deps (not via npm): `ffmpeg`, `ffprobe`, ImageMagick `convert` / `identify`, `file`. All are shelled out via `execSync` / `exec`.
+Package manager: pnpm 11, pinned via the `packageManager` field in `package.json` so corepack hands every contributor the same version. Two supply-chain guardrails live in `pnpm-workspace.yaml` and are load-bearing — do not bypass them:
+
+- `minimumReleaseAge: 10080` (7 days) — pnpm refuses any package version published in the last week. The Sept-2025 npm worm and similar attacks were caught within 48h; the quarantine window is what keeps a fresh malicious publish out of the lockfile.
+- `allowBuilds: { ... }` — install scripts only run for packages on this list. New native dep? Add it explicitly. If a transitive dep starts asking for an install script (pnpm prints "Ignored build scripts: ..."), audit it before allowlisting.
+
+Runtime system deps (not via pnpm): `ffmpeg`, `ffprobe`, ImageMagick `convert` / `identify`, `file`. All are shelled out via `execSync` / `exec`.
 
 Config is loaded at runtime from `$BOTNEK_CONFIG` (default `~/.botnek2/config.json`), JSON shape in `src/types/config.ts` (`BotnekConfigJson`): `{ token, anthropicApiKey?, logLevel? }`. The data root (where per-guild lowdb + audio/emote caches live) is resolved separately from `$BOTNEK_DATA_ROOT` (default `~/.botnek2/data`); deliberately not in the JSON so users can't desync the config field from the actual mount path. The Docker image sets `BOTNEK_CONFIG=/config/config.json` and `BOTNEK_DATA_ROOT=/data`; operators bind-mount the config file and data dir.
 

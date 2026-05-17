@@ -6,14 +6,15 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "packageManager": "pnpm@11.1.2",
   "scripts": {
     "build": "tsc --build",
     "clean": "rimraf dist",
-    "start": "node --loader ts-node/esm src/index.ts | npx pino-pretty -t",
+    "start": "node --loader ts-node/esm src/index.ts | pino-pretty -t",
     "lint": "eslint .",
-    "lint:fix": "npm run lint -- --fix",
+    "lint:fix": "pnpm run lint --fix",
     "prettier": "prettier src --check",
-    "prettier:fix": "npm run prettier -- --write",
+    "prettier:fix": "pnpm run prettier --write",
     "test": "vitest run",
     "test:watch": "vitest",
     "redeploy": "pm2 restart botnek2"
@@ -67,8 +68,5 @@
     "prettier-plugin-organize-imports": "^4.1.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.5"
-  },
-  "overrides": {
-    "tar": "^7.5.15"
   }
 }
