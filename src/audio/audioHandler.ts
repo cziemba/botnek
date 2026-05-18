@@ -35,11 +35,6 @@ const { Connecting, Destroyed, Disconnected, Signalling, Ready } = VoiceConnecti
 
 const { Idle } = AudioPlayerStatus;
 
-// 5 minutes of empty queue + Idle player before we leave the channel. Long enough that
-// back-to-back manual plays don't flap the connection, short enough that the bot doesn't
-// linger silently in someone's room overnight. Tunable via constructor for tests.
-export const IDLE_DISCONNECT_MS = 5 * 60 * 1000;
-
 export default class AudioHandler {
     private readonly player: AudioPlayer;
 
@@ -57,12 +52,7 @@ export default class AudioHandler {
     // multiple times.
     private readyLock: boolean = false;
 
-    private idleTimer?: NodeJS.Timeout;
-
-    private readonly idleTimeoutMs: number;
-
-    constructor(idleTimeoutMs: number = IDLE_DISCONNECT_MS) {
-        this.idleTimeoutMs = idleTimeoutMs;
+    constructor() {
         this.queue = new AudioQueue();
         this.player = new AudioPlayer();
 
@@ -90,9 +80,6 @@ export default class AudioHandler {
 
     public async enqueue(request: AudioRequest): Promise<void> {
         log.debug(`Enqueuing ${request.track.title}`);
-        // Cancel before push: a fresh enqueue must not race a pending idle-timer firing
-        // and yanking the connection out from under the about-to-play track.
-        this.cancelIdleTimer();
         this.queue.enqueue(request);
         log.debug(`Current queue: [${this.queue.queue.map((r) => r.track.title).join(',')}]`);
         await this.playNextFromQueue();
@@ -106,7 +93,6 @@ export default class AudioHandler {
         // can't sneak in and try to play from the (just-cleared) queue on a (just-destroyed)
         // connection.
         this.queueLock = true;
-        this.cancelIdleTimer();
         this.queue.clear();
         this.player.stop(true);
         if (this.connection && this.connection.state.status !== Destroyed) {
@@ -163,11 +149,13 @@ export default class AudioHandler {
         }
 
         if (this.queue.isEmpty()) {
-            // Don't tear down on drain — back-to-back plays would pay the full join cost
-            // (gateway voice handshake, UDP discovery, ~1-2s of dead air) every time.
-            // Arm a timer instead so the connection stays warm for likely-imminent enqueues.
+            // Tear down immediately on drain. The tradeoff: every subsequent /sfx pays the
+            // full join cost (gateway voice handshake + UDP discovery, ~1-2s of dead air)
+            // again, but the bot doesn't visibly loiter in the channel between plays. The
+            // Destroyed stateChange handler funnels through this.stop(), which is safe to
+            // re-enter here because the queue is already empty and the player is Idle.
             if (this.connection && this.connection.state.status !== Destroyed) {
-                this.armIdleTimer();
+                this.connection.destroy();
             }
             return;
         }
@@ -185,36 +173,6 @@ export default class AudioHandler {
             // Skip past the failed track immediately rather than leaving the queue stalled
             // until the next enqueue. Recursion depth is bounded by queue length.
             await this.playNextFromQueue();
-        }
-    }
-
-    private armIdleTimer(): void {
-        this.cancelIdleTimer();
-        log.debug(`Arming idle disconnect timer for ${this.idleTimeoutMs}ms`);
-        this.idleTimer = setTimeout(() => {
-            this.idleTimer = undefined;
-            // Re-check every condition at fire time: an enqueue could have arrived between
-            // the timer being scheduled and this callback running, and cancelIdleTimer is
-            // best-effort (the callback can already be queued by the event loop).
-            if (
-                this.queue.isEmpty() &&
-                this.player.state.status === Idle &&
-                this.connection &&
-                this.connection.state.status !== Destroyed
-            ) {
-                log.info(`Idle for ${this.idleTimeoutMs}ms, destroying voice connection`);
-                this.connection.destroy();
-            }
-        }, this.idleTimeoutMs);
-        // unref so an idle bot doesn't block process exit on SIGTERM. The optional-chain
-        // guards test environments where setTimeout returns a number rather than a Timeout.
-        this.idleTimer.unref?.();
-    }
-
-    private cancelIdleTimer(): void {
-        if (this.idleTimer) {
-            clearTimeout(this.idleTimer);
-            this.idleTimer = undefined;
         }
     }
 

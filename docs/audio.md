@@ -19,7 +19,7 @@ State:
 Lifecycle:
 
 1. **Enqueue** (`enqueue`) appends the request and calls `playNextFromQueue`.
-2. **Dequeue** (`playNextFromQueue`) early-exits if `queueLock` is held or the player is not `Idle`. If the queue is empty and a connection exists, the connection is destroyed. Otherwise pops the next request and calls `playRequest`.
+2. **Dequeue** (`playNextFromQueue`) early-exits if `queueLock` is held or the player is not `Idle`. If the queue is empty and a connection exists, the connection is destroyed immediately (the Destroyed stateChange funnels through `stop()`, which is re-entrant-safe here). Otherwise pops the next request and calls `playRequest`. Tradeoff: every fresh /sfx pays the full join handshake (~1-2s of dead air), but the bot doesn't visibly loiter in voice between plays.
 3. **Play** (`playRequest`):
    - Validates interaction → `GuildMember` with a voice channel.
    - Joins the channel if no connection exists, or moves if the existing connection is in a different channel.
