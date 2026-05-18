@@ -11,6 +11,7 @@ import fs from 'fs';
 import moment from 'moment';
 import path from 'path';
 import YoutubeTrack from '../../audio/tracks/youtubeTrack';
+import { guildDir, toStoredSfxPath } from '../../data/sfxPaths';
 import { isValidSfxAlias } from '../../data/types';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
@@ -169,9 +170,8 @@ export async function sfxAdd(
         return;
     }
 
-    const soundsPath = path.resolve(
-        path.join(client.config.dataRoot, interaction.guildId, 'sounds'),
-    );
+    const guildDirPath = guildDir(client.config.dataRoot, interaction.guildId);
+    const soundsPath = path.resolve(path.join(guildDirPath, 'sounds'));
 
     if (!fs.existsSync(soundsPath)) {
         log.info(`First time adding sfx, creating dir ${soundsPath}`);
@@ -198,10 +198,11 @@ export async function sfxAdd(
         })
         .then((track) => track.saveAudio(soundsPath, startFromSeconds, endAtSeconds))
         .then((filePath) => {
-            // Persist alias -> filesystem path. The file lives under the guild's
-            // sounds dir; saveAudio's deterministic naming means re-adding the same
-            // (title, trim) pair points at the existing file rather than re-downloading.
-            soundsDb.set(alias, filePath).value();
+            // Persist alias -> path relative to the guild dir. Relative storage keeps the
+            // db portable across hosts (Pi -> Docker -> wherever) — saveAudio's deterministic
+            // naming means re-adds of the same (title, trim) pair point at the existing file
+            // rather than re-downloading.
+            soundsDb.set(alias, toStoredSfxPath(guildDirPath, filePath)).value();
             db.write();
         })
         .then(() => replyMaybeEphemeral(interaction, `Added \`${alias}\``))

@@ -50,9 +50,12 @@ export function isSfxModifier(modifier: string): SfxModifier {
 }
 
 /**
- * `sounds[alias]` is the absolute path to the BASE (unmodified) mp3. Modifier variants live
- * as sibling files in `${guildDir}/ffmpeg/` and are not tracked in the db — they're a pure
- * regen cache, safe to delete.
+ * `sounds[alias]` is the path to the BASE (unmodified) mp3, stored **relative to the
+ * guild dir** (`${dataRoot}/${guildId}/`) so the db stays portable across hosts. Resolve
+ * with `resolveSfxPath` from `src/data/sfxPaths.ts` — it also tolerates the legacy
+ * absolute-path form for partially-migrated databases. Modifier variants live as sibling
+ * files in `${guildDir}/ffmpeg/` and are not tracked in the db (pure regen cache, safe
+ * to delete).
  */
 export type SfxConfig = {
     sounds: { [key: SfxAlias]: string };

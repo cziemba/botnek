@@ -3,7 +3,7 @@
 // which may shell out to ffmpeg if the (alias, mod) tuple isn't already cached.
 
 import { CommandInteraction, Message } from 'discord.js';
-import path from 'path';
+import { guildDir } from '../../data/sfxPaths';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
 import { replyMaybeEphemeral } from '../queueControl';
@@ -31,15 +31,14 @@ export async function sfxPlay(
 
     log.debug(`Parsed sfx play: ${parsedAlias} modifiers=[${modifiers.join(', ')}]`);
 
-    const sfxPath = loadSfxPath(db, parsedAlias);
+    const guildDirPath = guildDir(client.config.dataRoot, interaction.guildId);
+    const sfxPath = loadSfxPath(db, parsedAlias, guildDirPath);
 
     if (!sfxPath) {
         log.info(`Unknown sfx ${parsedAlias}`);
         await replyMaybeEphemeral(interaction, `\`${parsedAlias}\` does not exist!`, true);
         return;
     }
-
-    const guildDir = path.resolve(path.join(client.config.dataRoot, interaction.guildId));
 
     await replyMaybeEphemeral(
         interaction,
@@ -48,6 +47,6 @@ export async function sfxPlay(
 
     await audio.enqueue({
         interaction,
-        track: handleModifiers(sfxPath, parsedAlias, modifiers, guildDir),
+        track: handleModifiers(sfxPath, parsedAlias, modifiers, guildDirPath),
     });
 }

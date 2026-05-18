@@ -12,6 +12,7 @@
 
 import { CommandInteraction, Message } from 'discord.js';
 import fs from 'fs';
+import { guildDir, resolveSfxPath } from '../../data/sfxPaths';
 import { isValidSfxAlias } from '../../data/types';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
@@ -53,7 +54,8 @@ export async function sfxDel(
         return;
     }
 
-    const sfxPath = soundsDb.get(alias).value();
+    const guildDirPath = guildDir(client.config.dataRoot, interaction.guildId);
+    const sfxPath = resolveSfxPath(guildDirPath, soundsDb.get(alias).value());
 
     // Remove the db entry first, file second. If the rmSync below fails (permissions,
     // file already gone) the alias is still gone from the user's perspective — no

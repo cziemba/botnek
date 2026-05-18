@@ -35,7 +35,9 @@ type GuildData = {
 
 ### `SfxConfig`
 
-Key = `SfxAlias` (branded string, regex `/^[a-z0-9]{1,20}$/`, enforced via `isValidSfxAlias`). Value = absolute path to the mp3 on disk (the *base* file; modifiers produce sibling files in `${guildDir}/ffmpeg/`).
+Key = `SfxAlias` (branded string, regex `/^[a-z0-9]{1,20}$/`, enforced via `isValidSfxAlias`). Value = the path to the *base* mp3, **relative to the guild dir** `${dataRoot}/${guildId}/` (typically `sounds/<slug>.mp3`). Resolved at read time via `resolveSfxPath` in `src/data/sfxPaths.ts`. Modifier variants produce sibling files in `${guildDir}/ffmpeg/` and aren't tracked in the db.
+
+Historical note: values used to be absolute paths, which broke any time the bot's data root moved (Pi → Docker → new host). `Botnek.initGuildResources` runs `migrateSfxSounds` on boot to rewrite absolute paths that contain the guildId as a path segment; legacy absolutes that survive the migration (no guildId marker) are still tolerated by `resolveSfxPath` but won't survive a host move on their own.
 
 Reserved aliases: `['random']` (see `RESERVED_ALIAS` in `sfx/add.ts`). Don't add more reserved names without also updating `parseSfxAlias`.
 

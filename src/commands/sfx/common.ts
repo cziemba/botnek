@@ -5,6 +5,7 @@
 
 import LocalTrack from '../../audio/tracks/localTrack';
 import { LowWithLodash } from '../../data/db';
+import { resolveSfxPath } from '../../data/sfxPaths';
 import { GuildData, isSfxModifier, isValidSfxAlias, SfxAlias, SfxModifier } from '../../data/types';
 import log from '../../logging/logging';
 import { ffmpegAdjustRate, ffmpegBassBoost } from '../../utils/ffmpeg';
@@ -144,15 +145,21 @@ export function handleModifiers(
 }
 
 /**
- * Load sfx path based on alias, checking if it is valid.
+ * Load the absolute filesystem path for an sfx alias, or undefined if unknown. Resolves
+ * the stored value (canonically relative-to-guildDir, with legacy absolute paths still
+ * tolerated by resolveSfxPath) against the supplied guildDir so callers always get a
+ * path they can hand straight to ffmpeg / createAudioResource.
  */
-export function loadSfxPath(db: LowWithLodash<GuildData>, alias: SfxAlias): string | undefined {
-    const sfxAliasToPlay = alias;
-
-    if (!sfxExists(db, sfxAliasToPlay)) {
-        log.info(`Unknown sfx ${sfxAliasToPlay}`);
+export function loadSfxPath(
+    db: LowWithLodash<GuildData>,
+    alias: SfxAlias,
+    guildDirPath: string,
+): string | undefined {
+    if (!sfxExists(db, alias)) {
+        log.info(`Unknown sfx ${alias}`);
         return undefined;
     }
 
-    return db.chain.get('sfx').get('sounds').get(sfxAliasToPlay).value();
+    const stored = db.chain.get('sfx').get('sounds').get(alias).value();
+    return resolveSfxPath(guildDirPath, stored);
 }

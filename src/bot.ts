@@ -34,6 +34,7 @@ import SevenTVEmoteGateway from './commands/emotes/sevenTVEmoteGateway';
 import { helpMsgOptions } from './commands/help';
 import GuildDatabase from './data/db';
 import EmoteConfigManager from './data/emoteConfigManager';
+import { migrateSfxSounds } from './data/sfxPaths';
 import log from './logging/logging';
 import { BotnekConfig } from './types/config';
 import GuildResource from './types/guildResource';
@@ -309,7 +310,28 @@ export default class Botnek {
         this.audioHandlers.put(guildId, new AudioHandler());
 
         const dbPath = path.join(guildDbPath, DB_FILE);
-        this.databases.put(guildId, new GuildDatabase(dbPath));
+        const guildDb = new GuildDatabase(dbPath);
+
+        // Legacy databases stored sfx paths as absolute (`/home/pi/.local/share/botnek2/...`),
+        // which breaks every alias the moment the bot moves hosts. Rewrite to paths relative
+        // to the guild dir; resolveSfxPath still tolerates legacy absolutes as a safety net.
+        // Idempotent — re-running on already-migrated data is a no-op.
+        const sounds = guildDb.db.data.sfx.sounds;
+        const result = migrateSfxSounds(guildId, sounds);
+        if (result.migrated > 0 || result.skipped.length > 0) {
+            if (result.migrated > 0) {
+                guildDb.db.data.sfx.sounds = result.sounds;
+                guildDb.db.write();
+                log.info(`Migrated ${result.migrated} sfx path(s) to relative form for ${guildId}`);
+            }
+            if (result.skipped.length > 0) {
+                log.warn(
+                    `Skipped ${result.skipped.length} sfx path(s) with no recoverable guildId marker for ${guildId}: ${result.skipped.map((s) => s.alias).join(', ')}`,
+                );
+            }
+        }
+
+        this.databases.put(guildId, guildDb);
     }
 
     public async login(token: string): Promise<void> {

@@ -3,7 +3,7 @@
 // /stop kills the whole chain. Modifiers per link are supported (`a#TURBO,b#BASS`).
 
 import { CommandInteraction, Message } from 'discord.js';
-import path from 'path';
+import { guildDir } from '../../data/sfxPaths';
 import { SfxAlias, SfxModifier } from '../../data/types.js';
 import log from '../../logging/logging';
 import { BotShim } from '../../types/command';
@@ -33,6 +33,7 @@ export async function sfxChain(
         return;
     }
 
+    const guildDirPath = guildDir(client.config.dataRoot, interaction.guildId);
     const processedSfx = params.chain
         .split(/[ ,]+/)
         .map((s) => parseSfxAlias(db, s))
@@ -40,7 +41,7 @@ export async function sfxChain(
             (sfx) =>
                 ({
                     ...sfx,
-                    path: loadSfxPath(db, sfx.parsedAlias),
+                    path: loadSfxPath(db, sfx.parsedAlias, guildDirPath),
                 }) as ProcessedSfx,
         );
 
@@ -75,14 +76,16 @@ export async function sfxChain(
         return;
     }
 
-    const guildDir = path.resolve(path.join(client.config.dataRoot, interaction.guildId));
     const enqueuePromises: Promise<void>[] = [];
     processedSfx.forEach((sfx) => {
         const alias = sfx.parsedAlias;
         const mods = sfx.modifiers;
         const sfxPath = sfx.path!;
         enqueuePromises.push(
-            audio.enqueue({ interaction, track: handleModifiers(sfxPath, alias, mods, guildDir) }),
+            audio.enqueue({
+                interaction,
+                track: handleModifiers(sfxPath, alias, mods, guildDirPath),
+            }),
         );
     });
     await Promise.all(enqueuePromises);
